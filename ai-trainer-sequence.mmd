@@ -1,0 +1,31 @@
+sequenceDiagram
+    box rgb(245, 247, 255) AI Trainer
+    actor Trainer
+    end
+    box rgb(240, 255, 248) Sistem Web
+    participant Web
+    end
+    box rgb(255, 245, 240) AI Engine
+    participant AI
+    end
+    box rgb(255, 250, 235) Knowledge Base
+    participant KB
+    end
+
+    Trainer->>Web: 1. login(username, password)
+    Web-->>Trainer: 2. return: login berhasil
+    Trainer->>Web: 3. bukaDaftarUnanswered()
+    Web-->>Trainer: 4. return: daftar pertanyaan belum terjawab
+    Trainer->>Web: 5. pilihPertanyaan(id)
+    Web-->>Trainer: 6. return: detail pertanyaan
+    Trainer->>Web: 7. tambahAtauUpdateKnowledge()
+    Web->>KB: 8. simpanKnowledgeBaru()
+    KB-->>Web: 9. return: knowledge tersimpan
+    Trainer->>Web: 10. retestPertanyaan()
+    Web->>KB: 11. ambilContextBaru()
+    KB-->>Web: 12. return: context knowledge
+    Web->>AI: 13. kirimKeAI(prompt, context)
+    AI-->>Web: 14. return: jawaban baru
+    Web-->>Trainer: 15. return: hasil retest
+    Trainer->>Web: 16. reviewJawabanAI(verdict)
+    Web-->>Trainer: 17. return: review tersimpan

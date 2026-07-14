@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+        <h1 class="text-2xl font-semibold">Basis Pengetahuan</h1>
+        <p class="mt-2 text-sm text-slate-500">Kelola informasi yang dipakai AI untuk menjawab konsultasi herbal.</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+        <a href="{% url 'knowledge:entry_export' %}?format=csv{% if query_string %}&{{ query_string }}{% endif %}" class="rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700">Ekspor CSV</a>
+        <a href="{% url 'knowledge:entry_export' %}?format=xlsx{% if query_string %}&{{ query_string }}{% endif %}" class="rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700">Ekspor XLSX</a>
+        <a href="{% url 'knowledge:entry_create' %}" class="rounded-xl bg-slate-900 px-4 py-3 text-white">Tambah Entry</a>
+    </div>
+</div>
+
+<div class="mt-6 grid gap-4 md:grid-cols-3">
+    <div class="rounded-3xl bg-slate-950 p-5 text-white">
+        <p class="text-sm text-slate-300">Total Entri</p>
+        <p class="mt-3 text-3xl font-semibold">{{ knowledge_counts.total }}</p>
+    </div>
+    <div class="rounded-3xl bg-emerald-600 p-5 text-white">
+        <p class="text-sm text-emerald-100">Terbit</p>
+        <p class="mt-3 text-3xl font-semibold">{{ knowledge_counts.published }}</p>
+    </div>
+    <div class="rounded-3xl bg-amber-500 p-5 text-white">
+        <p class="text-sm text-amber-50">Draf</p>
+        <p class="mt-3 text-3xl font-semibold">{{ knowledge_counts.draft }}</p>
+    </div>
+</div>
+
+<div class="mt-4 grid gap-4 md:grid-cols-3">
+    <div class="rounded-3xl bg-emerald-50 p-5 ring-1 ring-emerald-100">
+        <p class="text-sm text-emerald-700">Kuat</p>
+        <p class="mt-3 text-3xl font-semibold text-emerald-900">{{ quality_counts.strong }}</p>
+    </div>
+    <div class="rounded-3xl bg-amber-50 p-5 ring-1 ring-amber-100">
+        <p class="text-sm text-amber-700">Perlu Ditinjau</p>
+        <p class="mt-3 text-3xl font-semibold text-amber-900">{{ quality_counts.needs_review }}</p>
+    </div>
+    <div class="rounded-3xl bg-rose-50 p-5 ring-1 ring-rose-100">
+        <p class="text-sm text-rose-700">Lemah</p>
+        <p class="mt-3 text-3xl font-semibold text-rose-900">{{ quality_counts.weak }}</p>
+    </div>
+</div>
+
+<div class="mt-6 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900">Impor CSV Basis Pengetahuan</h2>
+            <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-500">Gunakan file <span class="font-medium text-slate-700">.csv</span> atau <span class="font-medium text-slate-700">.xlsx</span> dengan header: <span class="font-medium text-slate-700">product, category, title, question, answer, source_type, keywords, status</span>. Nilai <span class="font-medium text-slate-700">source_type</span>: faq, product, sop, article. Nilai <span class="font-medium text-slate-700">status</span>: published atau draft.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="/static/csv/knowledge_import_template.csv" class="rounded-full bg-slate-900 px-3 py-2 text-xs text-white">Unduh template</a>
+            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">CSV / XLSX</span>
+        </div>
+    </div>
+    <form method="post" enctype="multipart/form-data" class="mt-5 grid gap-4 lg:grid-cols-[1fr_200px]">
+        {% csrf_token %}
+        <div>
+            <label for="{{ import_form.csv_file.id_for_label }}" class="mb-2 block text-sm font-medium text-slate-700">File CSV basis pengetahuan</label>
+            {{ import_form.csv_file }}
+        </div>
+        <button class="self-end rounded-xl bg-slate-900 px-4 py-3 text-sm text-white">Impor Pengetahuan</button>
+    </form>
+</div>
+
+<form method="get" class="mt-6 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+    <div class="flex flex-col gap-4">
+        <div class="relative">
+            <input type="text" name="q" value="{{ filter_values.q }}" placeholder="Cari judul, pertanyaan, jawaban, atau keyword" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 pr-12 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:bg-white">
+            <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
+                <svg viewBox="0 0 24 24" class="h-5 w-5 fill-none stroke-current stroke-2">
+                    <path d="m21 21-4.35-4.35"></path>
+                    <circle cx="11" cy="11" r="7"></circle>
+                </svg>
+            </span>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-[1.2fr_1fr_1fr_1fr_1fr_120px]">
+            <select name="product" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-slate-400">
+                <option value="">Semua produk</option>
+                {% for product in products %}
+                    <option value="{{ product.id }}" {% if filter_values.product == product.id|stringformat:'s' %}selected{% endif %}>{{ product.name }}</option>
+                {% endfor %}
+            </select>
+            <select name="category" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-slate-400">
+                <option value="">Semua kategori</option>
+                {% for category in categories %}
+                    <option value="{{ category.id }}" {% if filter_values.category == category.id|stringformat:'s' %}selected{% endif %}>{{ category.name }}</option>
+                {% endfor %}
+            </select>
+            <select name="source_type" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-slate-400">
+                <option value="">Semua tipe sumber</option>
+                <option value="faq" {% if filter_values.source_type == 'faq' %}selected{% endif %}>FAQ</option>
+                <option value="product" {% if filter_values.source_type == 'product' %}selected{% endif %}>Produk</option>
+                <option value="sop" {% if filter_values.source_type == 'sop' %}selected{% endif %}>SOP</option>
+                <option value="article" {% if filter_values.source_type == 'article' %}selected{% endif %}>Artikel</option>
+            </select>
+            <select name="status" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-slate-400">
+                <option value="">Semua status</option>
+                <option value="published" {% if filter_values.status == 'published' %}selected{% endif %}>Terbit</option>
+                <option value="draft" {% if filter_values.status == 'draft' %}selected{% endif %}>Draf</option>
+            </select>
+            <select name="quality_status" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-slate-400">
+                <option value="">Semua kualitas</option>
+                <option value="strong" {% if filter_values.quality_status == 'strong' %}selected{% endif %}>Kuat</option>
+                <option value="needs_review" {% if filter_values.quality_status == 'needs_review' %}selected{% endif %}>Perlu ditinjau</option>
+                <option value="weak" {% if filter_values.quality_status == 'weak' %}selected{% endif %}>Lemah</option>
+            </select>
+            <button class="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-slate-800">Saring</button>
+        </div>
+    </div>
+</form>
+
+<section class="mt-6 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+    <div class="flex items-center justify-between">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900">Kesehatan Pengetahuan per Produk</h2>
+            <p class="mt-1 text-sm text-slate-500">Gunakan ringkasan ini untuk menentukan produk mana yang paling perlu ditinjau oleh pelatih AI.</p>
+        </div>
+        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">Sinyal Pelatih</span>
+    </div>
+    <div class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {% for item in product_overview %}
+            <div class="rounded-2xl bg-slate-50 p-4">
+                <div class="flex items-center justify-between gap-3">
+                    <p class="text-sm font-medium text-slate-900">{{ item.product.name }}</p>
+                    <span class="rounded-full px-3 py-1 text-xs {{ item.health_class }}">{{ item.health_label }}</span>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-3 text-sm text-slate-600">
+                    <div class="rounded-xl bg-white p-3">Total KB: {{ item.total_entries }}</div>
+                    <div class="rounded-xl bg-white p-3">Kuat: {{ item.strong_entries }}</div>
+                    <div class="rounded-xl bg-white p-3">Perlu ditinjau: {{ item.needs_review_entries }}</div>
+                    <div class="rounded-xl bg-white p-3">Lemah: {{ item.weak_entries }}</div>
+                    <div class="rounded-xl bg-white p-3 col-span-2">Belum terjawab: {{ item.unanswered_total }}</div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+
+<div class="mt-6 grid gap-4">
+    {% for entry in entries %}
+        <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+            <div class="flex flex-wrap items-center gap-2">
+                {% if entry.product %}
+                    <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">{{ entry.product.name }}</span>
+                {% endif %}
+                <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">{{ entry.get_source_type_display }}</span>
+                <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">{{ entry.category.name }}</span>
+                <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">{{ entry.get_status_display }}</span>
+                <span class="rounded-full px-3 py-1 text-xs font-medium {% if entry.quality_status == 'strong' %}bg-emerald-50 text-emerald-700{% elif entry.quality_status == 'weak' %}bg-rose-50 text-rose-700{% else %}bg-amber-50 text-amber-700{% endif %}">
+                    {{ entry.get_quality_status_display }}
+                </span>
+            </div>
+            <h2 class="mt-3 text-lg font-semibold">{{ entry.title }}</h2>
+            <p class="mt-2 text-sm text-slate-600">{{ entry.question|default:"-" }}</p>
+            <p class="mt-3 text-sm text-slate-700">{{ entry.answer }}</p>
+            {% if entry.review_note %}
+                <div class="mt-3 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
+                    {{ entry.review_note }}
+                </div>
+            {% endif %}
+            <p class="mt-3 text-xs text-slate-500">Dibuat oleh {{ entry.created_by.username }}</p>
+            {% if entry.reviewed_by %}
+                <p class="mt-1 text-xs text-slate-400">Direview oleh {{ entry.reviewed_by.username }} pada {{ entry.reviewed_at }}</p>
+            {% endif %}
+            <div class="mt-5 flex flex-wrap gap-2">
+                <a href="{% url 'knowledge:entry_update' entry.pk %}" class="rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700">Ubah</a>
+                <a href="{% url 'knowledge:entry_delete' entry.pk %}" class="rounded-xl bg-rose-600 px-4 py-2 text-sm text-white">Hapus</a>
+            </div>
+        </div>
+    {% empty %}
+        <div class="rounded-2xl bg-white p-5 text-slate-500 ring-1 ring-slate-200">Belum ada entri pengetahuan.</div>
+    {% endfor %}
+</div>
+{% include "partials/pagination.html" %}
+{% endblock %}

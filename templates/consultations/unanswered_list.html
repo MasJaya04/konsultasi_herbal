@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+        <h1 class="text-2xl font-semibold">Pertanyaan Belum Terjawab</h1>
+        <p class="mt-2 text-sm text-slate-500">Pertanyaan yang belum dapat dijawab AI dan perlu ditinjau pelatih AI.</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+        <a href="{% url 'consultations:unanswered_export' %}?format=csv{% if query_string %}&{{ query_string }}{% endif %}" class="rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700">Ekspor CSV</a>
+        <a href="{% url 'consultations:unanswered_export' %}?format=xlsx{% if query_string %}&{{ query_string }}{% endif %}" class="rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700">Ekspor XLSX</a>
+        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">Alur Pelatih</span>
+    </div>
+</div>
+
+<div class="mt-6 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900">Impor Pertanyaan Belum Terjawab</h2>
+            <p class="mt-2 text-sm leading-6 text-slate-500">Gunakan file <span class="font-medium text-slate-700">.csv</span> atau <span class="font-medium text-slate-700">.xlsx</span> dengan header: <span class="font-medium text-slate-700">session_id, customer_username, product, question, reason, status</span>.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="/static/csv/unanswered_import_template.csv" class="rounded-full bg-slate-900 px-3 py-2 text-xs text-white">Unduh template</a>
+            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">CSV / XLSX</span>
+        </div>
+    </div>
+    <form method="post" enctype="multipart/form-data" class="mt-5 grid gap-4 lg:grid-cols-[1fr_220px]">
+        {% csrf_token %}
+        <input type="hidden" name="form_type" value="import">
+        <div>
+            <label for="{{ import_form.import_file.id_for_label }}" class="mb-2 block text-sm font-medium text-slate-700">File pertanyaan belum terjawab</label>
+            {{ import_form.import_file }}
+        </div>
+        <button class="self-end rounded-xl bg-slate-900 px-4 py-3 text-sm text-white">Impor Pertanyaan</button>
+    </form>
+</div>
+
+<div class="mt-6 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+    <div class="grid gap-4 md:grid-cols-3">
+        <div class="rounded-3xl bg-amber-50 p-5 ring-1 ring-amber-100">
+            <p class="text-sm text-amber-700">Terbuka</p>
+            <p class="mt-3 text-3xl font-semibold text-amber-900">{{ status_counts.open }}</p>
+        </div>
+        <div class="rounded-3xl bg-sky-50 p-5 ring-1 ring-sky-100">
+            <p class="text-sm text-sky-700">Sudah Ditinjau</p>
+            <p class="mt-3 text-3xl font-semibold text-sky-900">{{ status_counts.reviewed }}</p>
+        </div>
+        <div class="rounded-3xl bg-emerald-50 p-5 ring-1 ring-emerald-100">
+            <p class="text-sm text-emerald-700">Selesai</p>
+            <p class="mt-3 text-3xl font-semibold text-emerald-900">{{ status_counts.resolved }}</p>
+        </div>
+    </div>
+    <div class="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+        <div class="grid gap-4 sm:grid-cols-3">
+            <div>
+                <p class="text-sm text-slate-500">Total antrean</p>
+                <p class="mt-2 text-2xl font-semibold text-slate-900">{{ trainer_summary.total }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-slate-500">Sudah punya solusi</p>
+                <p class="mt-2 text-2xl font-semibold text-slate-900">{{ trainer_summary.with_resolution }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-slate-500">Masih perlu KB</p>
+                <p class="mt-2 text-2xl font-semibold text-slate-900">{{ trainer_summary.without_resolution }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form method="get" class="mt-6 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+    <div class="grid gap-4 md:grid-cols-[1fr_220px_180px_180px_220px_140px]">
+        <input type="text" name="q" value="{{ search_value }}" placeholder="Cari pertanyaan, alasan, atau username" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
+        <select name="product" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
+            <option value="">Semua produk</option>
+            {% for product in products %}
+                <option value="{{ product.id }}" {% if product_value == product.id|stringformat:'s' %}selected{% endif %}>{{ product.name }}</option>
+            {% endfor %}
+        </select>
+        <input type="date" name="start_date" value="{{ start_date }}" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
+        <input type="date" name="end_date" value="{{ end_date }}" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
+        <select name="status" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
+            <option value="">Semua status</option>
+            <option value="open" {% if status_value == 'open' %}selected{% endif %}>Terbuka</option>
+            <option value="reviewed" {% if status_value == 'reviewed' %}selected{% endif %}>Sudah ditinjau</option>
+            <option value="resolved" {% if status_value == 'resolved' %}selected{% endif %}>Selesai</option>
+        </select>
+        <button class="rounded-xl bg-slate-900 px-4 py-3 text-sm text-white">Saring</button>
+    </div>
+</form>
+
+<form method="post" class="mt-6 grid gap-4">
+    {% csrf_token %}
+    <input type="hidden" name="form_type" value="bulk_action">
+    <div class="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap gap-2">
+                <label class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700">
+                    <input type="checkbox" onclick="document.querySelectorAll('.unanswered-checkbox').forEach((item) => item.checked = this.checked)" class="rounded border-slate-300">
+                    Pilih semua
+                </label>
+                <select name="bulk_action" class="rounded-xl border border-slate-200 px-4 py-3 text-sm">
+                    <option value="">Pilih aksi massal</option>
+                    <option value="open">Tandai terbuka</option>
+                    <option value="reviewed">Tandai sudah ditinjau</option>
+                    <option value="resolved">Tandai selesai</option>
+                    <option value="delete">Hapus data</option>
+                </select>
+                <button class="rounded-xl bg-slate-900 px-4 py-3 text-sm text-white">Jalankan</button>
+            </div>
+            <p class="text-xs text-slate-500">Centang data yang ingin diproses sekaligus.</p>
+        </div>
+    </div>
+    {% for item in items %}
+        <div class="rounded-[1.75rem] bg-white p-5 shadow-sm ring-1 ring-slate-200">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div class="flex-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <input type="checkbox" name="selected_ids" value="{{ item.id }}" class="unanswered-checkbox rounded border-slate-300">
+                        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">{{ item.customer.username }}</span>
+                        {% if item.product %}
+                            <span class="rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-700">{{ item.product.name }}</span>
+                        {% endif %}
+                        <span class="rounded-full px-3 py-1 text-xs {% if item.status == 'open' %}bg-amber-50 text-amber-700{% elif item.status == 'reviewed' %}bg-sky-50 text-sky-700{% else %}bg-emerald-50 text-emerald-700{% endif %}">
+                            {{ item.get_status_display }}
+                        </span>
+                        {% if item.resolved_entry %}
+                            <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs text-emerald-700">{{ item.resolved_entry.title }}</span>
+                        {% endif %}
+                    </div>
+                    <h2 class="mt-3 text-lg font-semibold text-slate-900">{{ item.question }}</h2>
+                    <p class="mt-2 text-sm leading-6 text-slate-600">{{ item.reason }}</p>
+                    <p class="mt-3 text-xs text-slate-400">{{ item.created_at }}</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <a href="{% url 'knowledge:entry_create' %}?unanswered_id={{ item.id }}&title={{ item.question|urlencode }}&question={{ item.question|urlencode }}&keywords={{ item.question|urlencode }}" class="rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700">Buat KB</a>
+                    <a href="{% url 'consultations:unanswered_update' item.pk %}" class="rounded-xl bg-slate-900 px-4 py-3 text-white">Tinjau</a>
+                    <a href="{% url 'consultations:unanswered_delete' item.pk %}" class="rounded-xl bg-rose-600 px-4 py-3 text-white">Hapus</a>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="rounded-2xl bg-white p-5 text-slate-500 ring-1 ring-slate-200">Tidak ada pertanyaan belum terjawab.</div>
+    {% endfor %}
+</form>
+{% include "partials/pagination.html" %}
+{% endblock %}

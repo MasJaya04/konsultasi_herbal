@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-2xl rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+    <h1 class="text-2xl font-semibold">Hapus Produk Herbal</h1>
+    <p class="mt-4 text-sm leading-7 text-slate-600">Anda akan menghapus produk <span class="font-medium text-slate-900">{{ object.name }}</span>. Tindakan ini tidak bisa dibatalkan.</p>
+    <form method="post" class="mt-6 flex flex-wrap gap-3">
+        {% csrf_token %}
+        <a href="{% url 'catalog:product_list' %}" class="rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700">Batal</a>
+        <button class="rounded-xl bg-rose-600 px-4 py-3 text-white">Ya, hapus</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-3xl rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-semibold">{{ page_title|default:"Tambah Produk Herbal" }}</h1>
+            <p class="mt-2 text-sm leading-6 text-slate-500">Kategori dipakai untuk mengelompokkan produk herbal agar produk, laporan, dan saringan pengetahuan lebih mudah dikelola.</p>
+        </div>
+        <a href="{% url 'catalog:category_create' %}" class="rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50">Tambah kategori</a>
+    </div>
+    {% if not form.fields.category.queryset.exists %}
+        <div class="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-900">
+            Belum ada kategori produk. Buat kategori terlebih dahulu, lalu kembali ke halaman tambah produk.
+        </div>
+    {% endif %}
+    <form method="post" class="mt-6 space-y-4">
+        {% csrf_token %}
+        {% for field in form %}
+            {% if field.name != "slug" or object %}
+                <p>
+                    <label for="{{ field.id_for_label }}" class="mb-2 block text-sm font-medium text-slate-700">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <span class="mt-1 block text-xs text-slate-500">{{ field.help_text }}</span>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <span class="mt-1 block text-sm text-rose-600">{{ error }}</span>
+                    {% endfor %}
+                </p>
+            {% endif %}
+        {% endfor %}
+        {% for error in form.non_field_errors %}
+            <div class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-900">{{ error }}</div>
+        {% endfor %}
+        <div class="flex flex-wrap gap-3">
+            <button class="rounded-xl bg-slate-900 px-4 py-3 text-white">{{ submit_label|default:"Simpan" }}</button>
+            <a href="{% url 'catalog:product_list' %}" class="rounded-xl border border-slate-200 px-4 py-3 text-slate-700">Batal</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

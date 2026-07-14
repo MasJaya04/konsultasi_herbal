@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Konsultasi Herbal{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="{% block body_class %}min-h-screen bg-slate-100 text-slate-900{% endblock %}">
+    <div class="{% if request.user.is_authenticated and request.user.role != 'customer' or request.user.is_superuser %}min-h-screen lg:grid lg:grid-cols-[288px_1fr]{% else %}min-h-screen{% endif %}">
+        {% block nav %}
+            {% if request.user.is_authenticated and request.user.role != 'customer' or request.user.is_superuser %}
+                <aside class="border-b border-slate-200 bg-slate-950 text-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-b-0 lg:border-r lg:border-slate-800">
+                    <div class="flex items-center justify-between px-6 py-5">
+                        <a href="{% url 'dashboard:home' %}" class="flex items-center gap-3">
+                            <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-sky-500 text-lg font-semibold text-slate-950">N</span>
+                            <span>
+                                <span class="block text-lg font-semibold leading-tight">Naturalva AI</span>
+                                <span class="block text-xs text-slate-400">Pusat kendali herbal</span>
+                            </span>
+                        </a>
+                        <span class="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs text-slate-300 lg:hidden">{{ request.user.get_role_display }}</span>
+                    </div>
+
+                    <div class="flex-1 space-y-6 overflow-y-auto px-4 pb-6">
+                        <div>
+                            <p class="px-3 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Operasional</p>
+                            <div class="mt-3 space-y-1">
+                                <a href="{% url 'dashboard:home' %}" class="flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-medium transition {% if request.resolver_match.namespace == 'dashboard' %}bg-white text-slate-950 shadow-sm{% else %}text-slate-300 hover:bg-white/10 hover:text-white{% endif %}">
+                                    <span>Dasbor</span>
+                                    <span class="text-xs">01</span>
+                                </a>
+                                <a href="{% url 'consultations:history' %}" class="flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-medium transition {% if request.resolver_match.url_name == 'history' or request.resolver_match.url_name == 'session_detail' %}bg-white text-slate-950 shadow-sm{% else %}text-slate-300 hover:bg-white/10 hover:text-white{% endif %}">
+                                    <span>Riwayat Konsultasi</span>
+                                    <span class="text-xs">02</span>
+                                </a>
+                                <a href="{% url 'consultations:chat' %}" class="flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/10 hover:text-white">
+                                    <span>Chat Konsultasi</span>
+                                    <span class="text-xs">03</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        {% if request.user.role == 'admin' or request.user.is_superuser %}
+                            <div>
+                                <p class="px-3 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Admin</p>
+                                <div class="mt-3 space-y-1">
+                                    <a href="{% url 'accounts:user_list' %}" class="flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-medium transition {% if request.resolver_match.namespace == 'accounts' and request.resolver_match.url_name != 'login' %}bg-white text-slate-950 shadow-sm{% else %}text-slate-300 hover:bg-white/10 hover:text-white{% endif %}">
+                                        <span>Kelola Pengguna</span>
+                                        <span class="text-xs">A</span>
+                                    </a>
+                                    <a href="{% url 'catalog:product_list' %}" class="flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-medium transition {% if request.resolver_match.namespace == 'catalog' and request.resolver_match.url_name != 'category_list' and request.resolver_match.url_name != 'category_create' and request.resolver_match.url_name != 'category_update' and request.resolver_match.url_name != 'category_delete' %}bg-white text-slate-950 shadow-sm{% else %}text-slate-300 hover:bg-white/10 hover:text-white{% endif %}">
+                                        <span>Produk Herbal</span>
+                                        <span class="text-xs">B</span>
+                                    </a>
+                                    <a href="{% url 'catalog:category_list' %}" class="flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-medium transition {% if request.resolver_match.namespace == 'catalog' and request.resolver_match.url_name == 'category_list' or request.resolver_match.url_name == 'category_create' or request.resolver_match.url_name == 'category_update' or request.resolver_match.url_name == 'category_delete' %}bg-white text-slate-950 shadow-sm{% else %}text-slate-300 hover:bg-white/10 hover:text-white{% endif %}">
+                                        <span>Kategori Produk</span>
+                                        <span class="text-xs">C</span>
+                                    </a>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <div>
+                            <p class="px-3 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Pelatih AI</p>
+                            <div class="mt-3 space-y-1">
+                                <a href="{% url 'knowledge:entry_list' %}" class="flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-medium transition {% if request.resolver_match.namespace == 'knowledge' and request.resolver_match.url_name != 'quality_monitor' %}bg-white text-slate-950 shadow-sm{% else %}text-slate-300 hover:bg-white/10 hover:text-white{% endif %}">
+                                    <span>Basis Pengetahuan</span>
+                                    <span class="text-xs">KB</span>
+                                </a>
+                                <a href="{% url 'knowledge:quality_monitor' %}" class="flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-medium transition {% if request.resolver_match.url_name == 'quality_monitor' %}bg-white text-slate-950 shadow-sm{% else %}text-slate-300 hover:bg-white/10 hover:text-white{% endif %}">
+                                    <span>Monitor Kualitas</span>
+                                    <span class="text-xs">QM</span>
+                                </a>
+                                <a href="{% url 'consultations:unanswered_list' %}" class="flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-medium transition {% if request.resolver_match.url_name == 'unanswered_list' or request.resolver_match.url_name == 'unanswered_create' or request.resolver_match.url_name == 'unanswered_update' or request.resolver_match.url_name == 'unanswered_delete' %}bg-white text-slate-950 shadow-sm{% else %}text-slate-300 hover:bg-white/10 hover:text-white{% endif %}">
+                                    <span>Pertanyaan Belum Terjawab</span>
+                                    <span class="text-xs">UQ</span>
+                                </a>
+                                <a href="{% url 'consultations:review_list' %}" class="flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-medium transition {% if request.resolver_match.url_name == 'review_list' or request.resolver_match.url_name == 'review_create' or request.resolver_match.url_name == 'review_update' or request.resolver_match.url_name == 'review_delete' %}bg-white text-slate-950 shadow-sm{% else %}text-slate-300 hover:bg-white/10 hover:text-white{% endif %}">
+                                    <span>Evaluasi AI</span>
+                                    <span class="text-xs">EV</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        {% if request.user.role == 'admin' or request.user.is_superuser %}
+                            <div>
+                                <p class="px-3 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Audit</p>
+                                <div class="mt-3 space-y-1">
+                                    <a href="{% url 'consultations:activity_log_list' %}" class="flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-medium transition {% if request.resolver_match.url_name == 'activity_log_list' %}bg-white text-slate-950 shadow-sm{% else %}text-slate-300 hover:bg-white/10 hover:text-white{% endif %}">
+                                        <span>Log Aktivitas</span>
+                                        <span class="text-xs">LOG</span>
+                                    </a>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="border-t border-white/10 p-4">
+                        <div class="rounded-3xl border border-white/10 bg-white/10 p-4">
+                            <p class="truncate text-sm font-semibold">{{ request.user.get_full_name|default:request.user.username }}</p>
+                            <p class="mt-1 text-xs text-slate-400">{{ request.user.get_role_display }}</p>
+                            <form action="{% url 'accounts:logout' %}" method="post" class="mt-4">
+                                {% csrf_token %}
+                                <button class="w-full rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-100">Keluar</button>
+                            </form>
+                        </div>
+                    </div>
+                </aside>
+            {% else %}
+                <nav class="border-b border-slate-200 bg-white">
+                    <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+                        <div>
+                            <a href="{% if request.user.is_authenticated %}{% url 'consultations:chat' %}{% else %}{% url 'accounts:login' %}{% endif %}" class="text-lg font-semibold">Konsultasi Herbal AI</a>
+                            {% if request.user.is_authenticated %}
+                                <p class="text-sm text-slate-500">{{ request.user.username }} · {{ request.user.get_role_display }}</p>
+                            {% endif %}
+                        </div>
+                        {% if request.user.is_authenticated %}
+                            <div class="flex flex-wrap gap-2 text-sm">
+                                <a href="{% url 'consultations:chat' %}" class="rounded-lg bg-emerald-600 px-3 py-2 text-white">Konsultasi</a>
+                                <form action="{% url 'accounts:logout' %}" method="post">
+                                    {% csrf_token %}
+                                    <button class="rounded-lg bg-rose-600 px-3 py-2 text-white">Keluar</button>
+                                </form>
+                            </div>
+                        {% endif %}
+                    </div>
+                </nav>
+            {% endif %}
+        {% endblock %}
+
+        <div class="{% if request.user.is_authenticated and request.user.role != 'customer' or request.user.is_superuser %}min-w-0{% endif %}">
+            {% if request.user.is_authenticated and request.user.role != 'customer' or request.user.is_superuser %}
+                <header class="sticky top-0 z-20 border-b border-slate-200 bg-slate-100/90 px-6 py-4 backdrop-blur">
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">PT Naturalva Herba Indonesia</p>
+                            <h1 class="mt-1 text-xl font-semibold text-slate-950">{% block page_title %}Konsultasi Herbal AI{% endblock %}</h1>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="hidden rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 shadow-sm sm:inline-flex">{{ request.user.username }}</span>
+                            <span class="rounded-full bg-slate-950 px-4 py-2 text-sm font-medium text-white">{{ request.user.get_role_display }}</span>
+                        </div>
+                    </div>
+                </header>
+            {% endif %}
+            <main class="{% block main_class %}mx-auto max-w-7xl px-6 py-8{% endblock %}">
+                {% if messages %}
+                    <div class="mb-6 space-y-3">
+                        {% for message in messages %}
+                            <div class="rounded-xl px-4 py-3 text-sm {% if 'success' in message.tags %}border border-emerald-200 bg-emerald-50 text-emerald-900{% elif 'error' in message.tags %}border border-rose-200 bg-rose-50 text-rose-900{% elif 'warning' in message.tags %}border border-amber-200 bg-amber-50 text-amber-900{% else %}border border-sky-200 bg-sky-50 text-sky-900{% endif %}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-semibold">Manajemen Pengguna</h1>
+        <p class="text-sm text-slate-500">Kelola admin, pelatih AI, dan pengguna.</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+        <a href="{% url 'accounts:user_export' %}?format=csv{% if query_string %}&{{ query_string }}{% endif %}" class="rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700">Ekspor CSV</a>
+        <a href="{% url 'accounts:user_export' %}?format=xlsx{% if query_string %}&{{ query_string }}{% endif %}" class="rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700">Ekspor XLSX</a>
+        <a href="{% url 'accounts:user_create' %}" class="rounded-xl bg-slate-900 px-4 py-3 text-white">Tambah Pengguna</a>
+    </div>
+</div>
+<div class="mt-6 grid gap-4 md:grid-cols-3">
+    <div class="rounded-3xl bg-slate-950 p-5 text-white">
+        <p class="text-sm text-slate-300">Admin</p>
+        <p class="mt-3 text-3xl font-semibold">{{ role_counts.admin }}</p>
+    </div>
+    <div class="rounded-3xl bg-sky-600 p-5 text-white">
+        <p class="text-sm text-sky-100">Pelatih AI</p>
+        <p class="mt-3 text-3xl font-semibold">{{ role_counts.ai_trainer }}</p>
+    </div>
+    <div class="rounded-3xl bg-emerald-600 p-5 text-white">
+        <p class="text-sm text-emerald-100">Pengguna</p>
+        <p class="mt-3 text-3xl font-semibold">{{ role_counts.customer }}</p>
+    </div>
+</div>
+<div class="mt-6 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900">Impor Pengguna</h2>
+            <p class="mt-2 text-sm leading-6 text-slate-500">Gunakan file <span class="font-medium text-slate-700">.csv</span> atau <span class="font-medium text-slate-700">.xlsx</span> dengan header: <span class="font-medium text-slate-700">first_name, last_name, username, email, role, password</span>.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="/static/csv/user_import_template.csv" class="rounded-full bg-slate-900 px-3 py-2 text-xs text-white">Unduh template</a>
+            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">CSV / XLSX</span>
+        </div>
+    </div>
+    <form method="post" enctype="multipart/form-data" class="mt-5 grid gap-4 lg:grid-cols-[1fr_180px]">
+        {% csrf_token %}
+        <div>
+            <label for="{{ import_form.import_file.id_for_label }}" class="mb-2 block text-sm font-medium text-slate-700">File pengguna</label>
+            {{ import_form.import_file }}
+        </div>
+        <button class="self-end rounded-xl bg-slate-900 px-4 py-3 text-sm text-white">Impor Pengguna</button>
+    </form>
+</div>
+<form method="get" class="mt-6 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+    <div class="grid gap-4 md:grid-cols-[1fr_220px_140px]">
+        <input type="text" name="q" value="{{ filter_values.q }}" placeholder="Cari nama pengguna, nama, atau email" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
+        <select name="role" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
+            <option value="">Semua peran</option>
+            <option value="admin" {% if filter_values.role == 'admin' %}selected{% endif %}>Admin</option>
+            <option value="ai_trainer" {% if filter_values.role == 'ai_trainer' %}selected{% endif %}>Pelatih AI</option>
+            <option value="customer" {% if filter_values.role == 'customer' %}selected{% endif %}>Pengguna</option>
+        </select>
+        <button class="rounded-xl bg-slate-900 px-4 py-3 text-sm text-white">Saring</button>
+    </div>
+</form>
+<form method="post" class="mt-6 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+    {% csrf_token %}
+    <input type="hidden" name="form_type" value="bulk_action">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-4">
+        <div class="flex flex-wrap gap-2">
+            <select name="bulk_action" class="rounded-xl border border-slate-200 px-4 py-2 text-sm">
+                <option value="">Pilih aksi massal</option>
+                <option value="admin">Jadikan Admin</option>
+                <option value="ai_trainer">Jadikan Pelatih AI</option>
+                <option value="customer">Jadikan Pengguna</option>
+                <option value="delete">Hapus pengguna</option>
+            </select>
+            <button class="rounded-xl bg-slate-900 px-4 py-2 text-sm text-white">Jalankan</button>
+        </div>
+        <p class="text-xs text-slate-500">Centang pengguna yang ingin diproses sekaligus.</p>
+    </div>
+    <table class="min-w-full text-sm">
+        <thead class="bg-slate-50 text-left text-slate-500">
+            <tr>
+                <th class="px-4 py-3">
+                    <input type="checkbox" onclick="document.querySelectorAll('.user-checkbox').forEach((item) => item.checked = this.checked)" class="rounded border-slate-300">
+                </th>
+                <th class="px-4 py-3">Nama pengguna</th>
+                <th class="px-4 py-3">Nama</th>
+                <th class="px-4 py-3">Email</th>
+                <th class="px-4 py-3">Peran</th>
+                <th class="px-4 py-3">Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+                <tr class="border-t border-slate-100">
+                    <td class="px-4 py-3">
+                        <input type="checkbox" name="selected_ids" value="{{ user.id }}" class="user-checkbox rounded border-slate-300">
+                    </td>
+                    <td class="px-4 py-3">{{ user.username }}</td>
+                    <td class="px-4 py-3">{{ user.get_full_name|default:"-" }}</td>
+                    <td class="px-4 py-3">{{ user.email|default:"-" }}</td>
+                    <td class="px-4 py-3">
+                        <span class="rounded-full px-3 py-1 text-xs {% if user.role == 'admin' %}bg-slate-100 text-slate-700{% elif user.role == 'ai_trainer' %}bg-sky-50 text-sky-700{% else %}bg-emerald-50 text-emerald-700{% endif %}">
+                            {{ user.get_role_display }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="flex flex-wrap gap-2">
+                            <a href="{% url 'accounts:user_update' user.pk %}" class="rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-700">Ubah</a>
+                            <a href="{% url 'accounts:user_delete' user.pk %}" class="rounded-xl bg-rose-600 px-3 py-2 text-xs text-white">Hapus</a>
+                        </div>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="6" class="px-4 py-8 text-center text-slate-500">Belum ada pengguna.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</form>
+{% include "partials/pagination.html" %}
+{% endblock %}

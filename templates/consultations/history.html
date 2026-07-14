@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+        <h1 class="text-2xl font-semibold">Riwayat Konsultasi</h1>
+        <p class="mt-2 text-sm text-slate-500">Pantau sesi konsultasi yang sudah berlangsung.</p>
+    </div>
+</div>
+<form method="get" class="mt-6 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+    <div class="grid gap-4 md:grid-cols-[1fr_220px_180px_180px_140px]">
+        <input type="text" name="q" value="{{ search_value }}" placeholder="Cari judul sesi atau nama pengguna" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
+        <select name="product" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
+            <option value="">Semua produk</option>
+            {% for product in products %}
+                <option value="{{ product.id }}" {% if product_value == product.id|stringformat:'s' %}selected{% endif %}>{{ product.name }}</option>
+            {% endfor %}
+        </select>
+        <input type="date" name="start_date" value="{{ start_date }}" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
+        <input type="date" name="end_date" value="{{ end_date }}" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
+        <button class="rounded-xl bg-slate-900 px-4 py-3 text-sm text-white">Saring</button>
+    </div>
+</form>
+<div class="mt-6 grid gap-4">
+    {% for session in sessions %}
+        <a href="{% url 'consultations:session_detail' session.pk %}" class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="font-semibold">{{ session.title }}</h2>
+                    {% if session.referenced_products %}
+                        <div class="mt-2 flex flex-wrap gap-2">
+                            {% for product in session.referenced_products %}
+                                <span class="rounded-full bg-blue-50 px-3 py-1 text-[11px] text-blue-700">{{ product.name }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <p class="text-sm text-slate-500">{{ session.user.username }} · {{ session.created_at }}</p>
+                </div>
+                <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">{{ session.get_status_display }}</span>
+            </div>
+        </a>
+    {% empty %}
+        <div class="rounded-2xl bg-white p-5 text-slate-500 ring-1 ring-slate-200">Belum ada riwayat konsultasi.</div>
+    {% endfor %}
+</div>
+{% include "partials/pagination.html" %}
+{% endblock %}

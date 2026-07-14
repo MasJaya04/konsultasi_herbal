@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex items-center justify-between gap-4">
+    <div>
+        <h1 class="text-2xl font-semibold">Kategori Produk</h1>
+        <p class="mt-2 text-sm text-slate-500">Kelola kelompok produk agar katalog lebih rapi.</p>
+    </div>
+    <a href="{% url 'catalog:category_create' %}" class="rounded-xl bg-slate-900 px-4 py-3 text-white">Tambah Kategori</a>
+</div>
+<form method="get" class="mt-6 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+    <div class="grid gap-4 md:grid-cols-[1fr_140px]">
+        <input type="text" name="q" value="{{ search_value }}" placeholder="Cari nama kategori" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
+        <button class="rounded-xl bg-slate-900 px-4 py-3 text-sm text-white">Saring</button>
+    </div>
+</form>
+<div class="mt-6 grid gap-4 md:grid-cols-2">
+    {% for category in categories %}
+        <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+            <h2 class="font-semibold">{{ category.name }}</h2>
+            <p class="mt-2 text-sm text-slate-500">{{ category.description|default:"-" }}</p>
+            <div class="mt-5 flex flex-wrap gap-2">
+                <a href="{% url 'catalog:category_update' category.pk %}" class="rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700">Ubah</a>
+                <a href="{% url 'catalog:category_delete' category.pk %}" class="rounded-xl bg-rose-600 px-4 py-2 text-sm text-white">Hapus</a>
+            </div>
+        </div>
+    {% empty %}
+        <div class="rounded-2xl bg-white p-5 text-slate-500 ring-1 ring-slate-200">Belum ada kategori.</div>
+    {% endfor %}
+</div>
+{% include "partials/pagination.html" %}
+{% endblock %}

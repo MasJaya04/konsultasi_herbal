@@ -1,0 +1,36 @@
+flowchart TD
+    A[Permasalahan<br/>Konsultasi herbal masih manual,<br/>jawaban belum konsisten,<br/>dan akses informasi belum terpusat]
+
+    B[Kajian penelitian terdahulu]
+
+    C1[Chatbot dan LLM<br/>Mempercepat layanan konsultasi,<br/>tetapi akurasi jawaban<br/>belum selalu terjamin]
+    C2[RAG dan knowledge base<br/>Meningkatkan relevansi jawaban<br/>dengan memanfaatkan<br/>sumber pengetahuan]
+    C3[Human-in-the-loop<br/>Validasi dan evaluasi jawaban<br/>oleh AI Trainer<br/>untuk domain herbal]
+
+    D[Gap penelitian<br/>Belum ada integrasi optimal antara<br/>chat konsultasi AI, knowledge base herbal,<br/>dan evaluasi AI Trainer]
+
+    E[Rancangan sistem yang diusulkan]
+
+    F1[AI Engine<br/>Memproses pertanyaan pengguna<br/>dan menghasilkan jawaban]
+    F2[Knowledge Base<br/>Menyimpan data produk, manfaat,<br/>aturan pakai, kontraindikasi,<br/>dan FAQ herbal]
+    F3[AI Trainer<br/>Meninjau unanswered question,<br/>mengevaluasi jawaban AI,<br/>dan memperbarui knowledge base]
+
+    G[Dikembangkan dengan metode Waterfall]
+
+    H[Hasil yang diharapkan<br/>Konsultasi herbal lebih cepat,<br/>lebih konsisten, lebih akurat,<br/>dan knowledge base terus berkembang]
+
+    A --> B
+    B --> C1
+    B --> C2
+    B --> C3
+    C1 --> D
+    C2 --> D
+    C3 --> D
+    D --> E
+    E --> F1
+    E --> F2
+    E --> F3
+    F1 --> G
+    F2 --> G
+    F3 --> G
+    G --> H

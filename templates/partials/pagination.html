@@ -1,0 +1,13 @@
+{% if page_obj.has_other_pages %}
+<div class="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white px-5 py-4 shadow-sm ring-1 ring-slate-200">
+    <p class="text-sm text-slate-500">Halaman {{ page_obj.number }} dari {{ page_obj.paginator.num_pages }}</p>
+    <div class="flex flex-wrap gap-2">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700">Sebelumnya</a>
+        {% endif %}
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="rounded-xl bg-slate-900 px-4 py-2 text-sm text-white">Berikutnya</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}

@@ -1,0 +1,87 @@
+sequenceDiagram
+    box rgb(245, 247, 255) Customer
+    actor Customer
+    end
+    box rgb(240, 255, 248) Sistem Web
+    participant Web
+    end
+    box rgb(255, 245, 240) AI Engine
+    participant AI
+    end
+    box rgb(255, 250, 235) Knowledge Base
+    participant KB
+    end
+
+    Customer->>Web: 1. login(username, password)
+    Web-->>Customer: 2. return: login berhasil
+    Customer->>Web: 3. bukaHalamanKonsultasi()
+    Web-->>Customer: 4. return: tampilkan form chat
+    Customer->>Web: 5. kirimPertanyaan(prompt)
+    Web->>KB: 6. cariKnowledge(prompt, produk)
+    KB-->>Web: 7. return: context knowledge
+    Web->>AI: 8. kirimKeAI(prompt, context)
+    AI-->>Web: 9. return: jawaban AI
+    Web-->>Customer: 10. return: tampilkan hasil konsultasi
+    Customer->>Web: 11. lihatRiwayatKonsultasi()
+    Web-->>Customer: 12. return: daftar riwayat
+
+---
+
+sequenceDiagram
+    box rgb(245, 247, 255) AI Trainer
+    actor Trainer
+    end
+    box rgb(240, 255, 248) Sistem Web
+    participant Web
+    end
+    box rgb(255, 245, 240) AI Engine
+    participant AI
+    end
+    box rgb(255, 250, 235) Knowledge Base
+    participant KB
+    end
+
+    Trainer->>Web: 1. login(username, password)
+    Web-->>Trainer: 2. return: login berhasil
+    Trainer->>Web: 3. bukaDaftarUnanswered()
+    Web-->>Trainer: 4. return: daftar pertanyaan belum terjawab
+    Trainer->>Web: 5. pilihPertanyaan(id)
+    Web-->>Trainer: 6. return: detail pertanyaan
+    Trainer->>Web: 7. tambahAtauUpdateKnowledge()
+    Web->>KB: 8. simpanKnowledgeBaru()
+    KB-->>Web: 9. return: knowledge tersimpan
+    Trainer->>Web: 10. retestPertanyaan()
+    Web->>KB: 11. ambilContextBaru()
+    KB-->>Web: 12. return: context knowledge
+    Web->>AI: 13. kirimKeAI(prompt, context)
+    AI-->>Web: 14. return: jawaban baru
+    Web-->>Trainer: 15. return: hasil retest
+    Trainer->>Web: 16. reviewJawabanAI(verdict)
+    Web-->>Trainer: 17. return: review tersimpan
+
+---
+
+sequenceDiagram
+    box rgb(245, 247, 255) Admin
+    actor Admin
+    end
+    box rgb(240, 255, 248) Sistem Web
+    participant Web
+    end
+    box rgb(255, 245, 240) AI Engine
+    participant AI
+    end
+    box rgb(255, 250, 235) Knowledge Base
+    participant KB
+    end
+
+    Admin->>Web: 1. login(username, password)
+    Web-->>Admin: 2. return: login berhasil
+    Admin->>Web: 3. kelolaUser()
+    Web-->>Admin: 4. return: data user diperbarui
+    Admin->>Web: 5. kelolaProdukHerbal()
+    Web-->>Admin: 6. return: data produk diperbarui
+    Admin->>Web: 7. lihatDashboard()
+    Web-->>Admin: 8. return: laporan konsultasi
+    Admin->>Web: 9. exportLaporan()
+    Web-->>Admin: 10. return: file laporan

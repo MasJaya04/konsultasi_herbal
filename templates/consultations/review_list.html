@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+        <h1 class="text-2xl font-semibold">Evaluasi Jawaban AI</h1>
+        <p class="mt-2 text-sm text-slate-500">Tinjau kualitas jawaban AI, sumber yang digunakan, dan respons cadangan.</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+        <a href="{% url 'consultations:review_export' %}?format=csv{% if query_string %}&{{ query_string }}{% endif %}" class="rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700">Ekspor CSV</a>
+        <a href="{% url 'consultations:review_export' %}?format=xlsx{% if query_string %}&{{ query_string }}{% endif %}" class="rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700">Ekspor XLSX</a>
+        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">Evaluasi Pelatih AI</span>
+    </div>
+</div>
+
+<div class="mt-6 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900">Impor Evaluasi AI</h2>
+            <p class="mt-2 text-sm leading-6 text-slate-500">Gunakan file <span class="font-medium text-slate-700">.csv</span> atau <span class="font-medium text-slate-700">.xlsx</span> dengan header: <span class="font-medium text-slate-700">message_id, reviewer_username, product, verdict, note</span>.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="/static/csv/review_import_template.csv" class="rounded-full bg-slate-900 px-3 py-2 text-xs text-white">Unduh template</a>
+            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">CSV / XLSX</span>
+        </div>
+    </div>
+    <form method="post" enctype="multipart/form-data" class="mt-5 grid gap-4 lg:grid-cols-[1fr_180px]">
+        {% csrf_token %}
+        <input type="hidden" name="form_type" value="import">
+        <div>
+            <label for="{{ import_form.import_file.id_for_label }}" class="mb-2 block text-sm font-medium text-slate-700">File evaluasi AI</label>
+            {{ import_form.import_file }}
+        </div>
+        <button class="self-end rounded-xl bg-slate-900 px-4 py-3 text-sm text-white">Impor Evaluasi</button>
+    </form>
+</div>
+
+<div class="mt-6 grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+    <div class="grid gap-4 md:grid-cols-3">
+        <div class="rounded-3xl bg-amber-50 p-5 ring-1 ring-amber-100">
+            <p class="text-sm text-amber-700">Menunggu Evaluasi</p>
+            <p class="mt-3 text-3xl font-semibold text-amber-900">{{ review_counts.pending }}</p>
+        </div>
+        <div class="rounded-3xl bg-sky-50 p-5 ring-1 ring-sky-100">
+            <p class="text-sm text-sky-700">Sudah Dievaluasi</p>
+            <p class="mt-3 text-3xl font-semibold text-sky-900">{{ review_counts.reviewed }}</p>
+        </div>
+        <div class="rounded-3xl bg-rose-50 p-5 ring-1 ring-rose-100">
+            <p class="text-sm text-rose-700">Cadangan</p>
+            <p class="mt-3 text-3xl font-semibold text-rose-900">{{ review_counts.fallback }}</p>
+        </div>
+    </div>
+    <div class="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+        <div class="grid gap-4 sm:grid-cols-3">
+            <div>
+                <p class="text-sm text-slate-500">Akurat</p>
+                <p class="mt-2 text-2xl font-semibold text-slate-900">{{ verdict_counts.accurate }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-slate-500">Perlu Revisi</p>
+                <p class="mt-2 text-2xl font-semibold text-slate-900">{{ verdict_counts.needs_revision }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-slate-500">Tidak Tepat</p>
+                <p class="mt-2 text-2xl font-semibold text-slate-900">{{ verdict_counts.incorrect }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form method="get" class="mt-6 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+    <div class="grid gap-4 md:grid-cols-5">
+        <input type="text" name="q" value="{{ filter_values.q }}" placeholder="Cari user, sesi, atau isi jawaban" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
+        <select name="product" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
+            <option value="">Semua produk</option>
+            {% for product in products %}
+                <option value="{{ product.id }}" {% if filter_values.product == product.id|stringformat:'s' %}selected{% endif %}>{{ product.name }}</option>
+            {% endfor %}
+        </select>
+        <select name="review_state" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
+            <option value="">Semua status evaluasi</option>
+            <option value="pending" {% if filter_values.review_state == 'pending' %}selected{% endif %}>Menunggu</option>
+            <option value="reviewed" {% if filter_values.review_state == 'reviewed' %}selected{% endif %}>Sudah dievaluasi</option>
+        </select>
+        <select name="response_state" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
+            <option value="">Semua status jawaban</option>
+            <option value="answered" {% if filter_values.response_state == 'answered' %}selected{% endif %}>Terjawab</option>
+            <option value="fallback" {% if filter_values.response_state == 'fallback' %}selected{% endif %}>Cadangan</option>
+        </select>
+        <button class="rounded-xl bg-slate-900 px-4 py-3 text-sm text-white">Saring</button>
+    </div>
+</form>
+
+<form method="post" class="mt-6 grid gap-4">
+    {% csrf_token %}
+    <input type="hidden" name="form_type" value="bulk_action">
+    <div class="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap gap-2">
+                <label class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700">
+                    <input type="checkbox" onclick="document.querySelectorAll('.review-checkbox').forEach((item) => item.checked = this.checked)" class="rounded border-slate-300">
+                    Pilih semua
+                </label>
+                <select name="bulk_action" class="rounded-xl border border-slate-200 px-4 py-3 text-sm">
+                    <option value="">Pilih aksi massal</option>
+                    <option value="accurate">Tandai akurat</option>
+                    <option value="needs_revision">Tandai perlu revisi</option>
+                    <option value="incorrect">Tandai tidak tepat</option>
+                    <option value="delete_review">Hapus review saya</option>
+                </select>
+                <button class="rounded-xl bg-slate-900 px-4 py-3 text-sm text-white">Jalankan</button>
+            </div>
+            <p class="text-xs text-slate-500">Aksi massal akan membuat atau memperbarui evaluasi atas nama Anda.</p>
+        </div>
+    </div>
+    {% for message in messages %}
+        <div class="rounded-[1.75rem] bg-white p-5 shadow-sm ring-1 ring-slate-200">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div class="flex-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <input type="checkbox" name="selected_ids" value="{{ message.id }}" class="review-checkbox rounded border-slate-300">
+                        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">{{ message.session.user.username }}</span>
+                        {% if message.product %}
+                            <span class="rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-700">{{ message.product.name }}</span>
+                        {% endif %}
+                        <span class="rounded-full px-3 py-1 text-xs {% if message.response_state == 'fallback' %}bg-amber-50 text-amber-700{% else %}bg-emerald-50 text-emerald-700{% endif %}">
+                            {{ message.get_response_state_display }}
+                        </span>
+                        {% if message.reviews.exists %}
+                            {% for review in message.reviews.all %}
+                                <span class="rounded-full bg-sky-50 px-3 py-1 text-xs text-sky-700">{{ review.get_verdict_display }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="rounded-full bg-rose-50 px-3 py-1 text-xs text-rose-700">Belum direview</span>
+                        {% endif %}
+                        <span class="rounded-full bg-white px-3 py-1 text-xs text-slate-600 ring-1 ring-slate-200">Keyakinan {{ message.confidence_score|default:"0" }}</span>
+                    </div>
+                    <p class="mt-3 text-xs text-slate-400">{{ message.session.title }} · {{ message.created_at }}</p>
+                    <p class="mt-3 text-sm leading-7 text-slate-700">{{ message.content }}</p>
+                    {% if message.source_summary %}
+                        <p class="mt-3 text-xs text-slate-400">Sumber: {{ message.source_summary }}</p>
+                    {% endif %}
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <a href="{% url 'consultations:review_create' message.pk %}" class="inline-flex rounded-xl bg-slate-900 px-4 py-3 text-white">Evaluasi</a>
+                    {% for review in message.reviews.all %}
+                        <a href="{% url 'consultations:review_update' review.pk %}" class="inline-flex rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700">Ubah Evaluasi</a>
+                        <a href="{% url 'consultations:review_delete' review.pk %}" class="inline-flex rounded-xl bg-rose-600 px-4 py-3 text-sm text-white">Hapus Evaluasi</a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="rounded-2xl bg-white p-5 text-slate-500 ring-1 ring-slate-200">Belum ada jawaban AI.</div>
+    {% endfor %}
+</form>
+{% include "partials/pagination.html" %}
+{% endblock %}

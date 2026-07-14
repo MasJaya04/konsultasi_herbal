@@ -1,0 +1,40 @@
+Stack yang ingin dipakai 
+1. Django
+2. PostgreSQL
+3. Tailwind
+
+Fitur versi pertama 
+1. login
+2. role admin
+3. role AI Trainer
+4. role customer/user
+5. kelola produk herbal
+6. kelola knowledge base
+7. chat konsultasi AI
+8. riwayat konsultasi
+9. unanswered question
+10. laporan/admin dashboard
+
+Alur AI yang Anda inginkan 
+1. AI jawab langsung dari prompt biasa
+2. AI jawab dari knowledge base
+3. AI jawab dengan pola RAG
+4. jika tidak tahu, simpan ke unanswered question
+
+Sumber data awal 
+1. daftar produk herbal
+2. manfaat produk
+3. aturan pakai
+4. kontraindikasi
+5. FAQ
+
+Hak akses tiap role 
+1. Admin: kelola user, produk, kategori, laporan
+2. AI Trainer: kelola knowledge base, review unanswered question, evaluasi jawaban AI
+3. User: konsultasi, lihat riwayat
+
+Target bentuk project 
+1. fullstack versi MVP
+
+Integrasi AI 
+periksa menggunakan prompt ollama list di terminal

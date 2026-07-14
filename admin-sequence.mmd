@@ -1,0 +1,24 @@
+sequenceDiagram
+    box rgb(245, 247, 255) Admin
+    actor Admin
+    end
+    box rgb(240, 255, 248) Sistem Web
+    participant Web
+    end
+    box rgb(255, 245, 240) AI Engine
+    participant AI
+    end
+    box rgb(255, 250, 235) Knowledge Base
+    participant KB
+    end
+
+    Admin->>Web: 1. login(username, password)
+    Web-->>Admin: 2. return: login berhasil
+    Admin->>Web: 3. kelolaUser()
+    Web-->>Admin: 4. return: data user diperbarui
+    Admin->>Web: 5. kelolaProdukHerbal()
+    Web-->>Admin: 6. return: data produk diperbarui
+    Admin->>Web: 7. lihatDashboard()
+    Web-->>Admin: 8. return: laporan konsultasi
+    Admin->>Web: 9. exportLaporan()
+    Web-->>Admin: 10. return: file laporan

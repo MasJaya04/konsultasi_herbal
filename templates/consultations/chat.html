@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+
+{% block body_class %}min-h-screen bg-white text-slate-900{% endblock %}
+{% block main_class %}min-h-screen{% endblock %}
+{% block nav %}{% endblock %}
+
+{% block content %}
+<div class="grid min-h-screen md:grid-cols-[280px_1fr]">
+    <aside class="flex min-h-screen flex-col border-r border-slate-200 bg-slate-50/80">
+        <div class="px-5 py-5">
+            <div class="flex items-center gap-2">
+                <div class="flex h-9 w-9 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-sm">
+                    <svg viewBox="0 0 24 24" class="h-5 w-5 fill-current">
+                        <path d="M12 2a8 8 0 0 1 7.75 6h1.25a1 1 0 1 1 0 2h-1a8 8 0 1 1-1.7-5.1l-1.52 1.3A6 6 0 1 0 18 10h-3l4-4 4 4h-3a8 8 0 0 1-8 8 8 8 0 1 1 0-16Z"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-xl font-semibold tracking-tight text-blue-600">naturalva ai</p>
+                    <p class="text-xs text-slate-400">Konsultasi herbal</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="px-4">
+            <form method="post">
+                {% csrf_token %}
+                <button name="new_chat" value="1" class="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 shadow-sm transition hover:border-blue-200 hover:text-blue-600">
+                    <span class="text-lg leading-none">+</span>
+                    <span>Percakapan baru</span>
+                </button>
+            </form>
+        </div>
+
+        <div class="mt-6 flex-1 overflow-y-auto px-4 pb-6">
+            <p class="px-2 text-xs font-medium uppercase tracking-[0.24em] text-slate-400">Riwayat</p>
+            {% if session_groups %}
+                <div class="mt-3 space-y-5">
+                    {% for group in session_groups %}
+                        <div>
+                            <p class="px-2 text-xs font-medium text-slate-400">{{ group.label }}</p>
+                            <div class="mt-2 space-y-2">
+                                {% for item in group.items %}
+                                    <div class="rounded-2xl px-3 py-3 transition {% if session.id == item.id %}bg-white shadow-sm ring-1 ring-slate-200{% else %}hover:bg-white/80{% endif %}">
+                                        <div class="flex items-start gap-2">
+                                            <a href="{% url 'consultations:chat' %}?session={{ item.id }}" class="min-w-0 flex-1">
+                                                <p class="line-clamp-1 text-sm font-medium text-slate-800">{{ item.title }}</p>
+                                                {% if item.product %}
+                                                    <p class="mt-1 line-clamp-1 text-xs text-blue-600">{{ item.product.name }}</p>
+                                                {% endif %}
+                                                <p class="mt-1 text-xs text-slate-400">{{ item.updated_at|date:"d M Y H:i" }}</p>
+                                            </a>
+                                            <details class="relative session-menu">
+                                                <summary class="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">
+                                                    <svg viewBox="0 0 24 24" class="h-5 w-5 fill-current">
+                                                        <circle cx="5" cy="12" r="1.8"></circle>
+                                                        <circle cx="12" cy="12" r="1.8"></circle>
+                                                        <circle cx="19" cy="12" r="1.8"></circle>
+                                                    </svg>
+                                                </summary>
+                                                <div class="absolute right-0 top-10 z-10 w-28 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+                                                    <form method="post" action="{% url 'consultations:session_delete' item.id %}" class="delete-session-form">
+                                                        {% csrf_token %}
+                                                        <button class="w-full rounded-lg px-3 py-2 text-left text-sm text-rose-600 transition hover:bg-rose-50">
+                                                            Hapus
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </details>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="mt-3 rounded-2xl bg-white px-4 py-4 text-sm text-slate-400 ring-1 ring-slate-200">
+                    Belum ada percakapan.
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="border-t border-slate-200 px-4 py-4">
+            <div class="flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-slate-200">
+                <div class="min-w-0">
+                    <p class="truncate text-sm font-medium text-slate-800">{{ request.user.get_full_name|default:request.user.username }}</p>
+                    <p class="text-xs text-slate-400">{{ request.user.username }}</p>
+                </div>
+                <form action="{% url 'accounts:logout' %}" method="post">
+                    {% csrf_token %}
+                    <button class="text-sm text-slate-400 transition hover:text-rose-500">Keluar</button>
+                </form>
+            </div>
+        </div>
+    </aside>
+
+    <section class="relative flex min-h-screen flex-col bg-white">
+        <div class="flex-1 overflow-y-auto px-6 pb-44 pt-10 md:px-16">
+            <div class="mx-auto mb-6 max-w-4xl rounded-[28px] border border-slate-200 bg-slate-50 px-5 py-4">
+                <p class="text-sm font-medium text-slate-700">Tanyakan produk apa pun dalam satu percakapan.</p>
+                <p class="mt-1 text-sm text-slate-400">Pilih produk aktif atau sebutkan nama produk di pertanyaan agar sistem bisa mencari konteks yang lebih tepat.</p>
+            </div>
+            {% if chat_messages %}
+                <div id="chat-messages" class="mx-auto flex max-w-4xl flex-col gap-8">
+                    {% for message in chat_messages %}
+                        <div class="flex {% if message.sender == 'user' %}justify-end{% else %}justify-start{% endif %}">
+                            <div class="max-w-3xl rounded-[28px] px-5 py-4 shadow-sm {% if message.sender == 'user' %}bg-blue-600 text-white{% else %}border border-slate-200 bg-white text-slate-800{% endif %}" {% if message.sender == 'ai' %}data-ai-message="true" data-source-summary="{{ message.source_summary|escape }}" data-message-content="{{ message.content|escape }}"{% endif %}>
+                                <p class="text-sm leading-7">{{ message.content }}</p>
+                                {% if message.sender == 'ai' %}
+                                    <div class="suggestion-panel mt-4 hidden rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                                        <div class="suggestion-header flex items-center justify-between gap-3">
+                                            <div>
+                                                <p class="suggestion-title text-sm font-semibold text-slate-900"></p>
+                                                <p class="suggestion-subtitle mt-1 text-xs text-slate-500"></p>
+                                            </div>
+                                            <span class="suggestion-badge rounded-full px-3 py-1 text-[11px] font-medium"></span>
+                                        </div>
+                                        <div class="suggestion-actions mt-4 hidden flex-wrap gap-2"></div>
+                                    </div>
+                                    <div class="mt-4 flex flex-wrap items-center gap-2">
+                                        {% if message.response_state == 'fallback' %}
+                                            <span class="rounded-full bg-amber-50 px-3 py-1 text-xs text-amber-700">Perlu tinjauan pelatih AI</span>
+                                        {% endif %}
+                                        {% for entry in message.knowledge_entries.all %}
+                                            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500">{{ entry.title }}</span>
+                                        {% endfor %}
+                                        <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs text-emerald-600">Keyakinan {{ message.confidence_score|default:"0" }}</span>
+                                    </div>
+                                    {% if message.source_summary %}
+                                        <p class="source-summary mt-3 text-xs leading-5 text-slate-400">Sumber: {{ message.source_summary }}</p>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="flex h-full items-center justify-center">
+                    <div id="chat-empty-state" class="w-full max-w-3xl text-center">
+                        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-blue-600/10 text-blue-600">
+                            <svg viewBox="0 0 24 24" class="h-8 w-8 fill-current">
+                                <path d="M12 2a8 8 0 0 1 7.75 6h1.25a1 1 0 1 1 0 2h-1a8 8 0 1 1-1.7-5.1l-1.52 1.3A6 6 0 1 0 18 10h-3l4-4 4 4h-3a8 8 0 0 1-8 8 8 8 0 1 1 0-16Z"/>
+                            </svg>
+                        </div>
+                        <h1 class="mt-6 text-4xl font-semibold tracking-tight text-slate-900">Mulai konsultasi herbal Anda</h1>
+                        <p class="mt-4 text-base text-slate-400">Pilih produk aktif atau sebutkan nama produk di pertanyaan Anda, misalnya: produk Detogreen untuk apa?</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="fixed bottom-0 left-0 right-0 border-t border-slate-100 bg-white/90 px-4 py-6 backdrop-blur md:left-[280px] md:px-10">
+            <div class="mx-auto max-w-4xl">
+                <form id="chat-form" method="post" action="{% url 'consultations:chat' %}?session={{ session.id }}" class="rounded-[30px] border border-slate-200 bg-white px-4 py-4 shadow-[0_16px_40px_rgba(15,23,42,0.08)]">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        {{ form.product }}
+                    </div>
+                    <label for="{{ form.prompt.id_for_label }}" class="sr-only">Pesan</label>
+                    <div class="relative">
+                        {{ form.prompt }}
+                        <button id="chat-submit" type="submit" class="absolute bottom-4 right-4 flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300">
+                            <svg viewBox="0 0 24 24" class="h-5 w-5 fill-none stroke-current" stroke-width="2">
+                                <path d="M12 19V5"></path>
+                                <path d="M5 12l7-7 7 7"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+</div>
+<script>
+    (() => {
+        const promptField = document.getElementById("id_prompt");
+        const submitButton = document.getElementById("chat-submit");
+        const chatForm = document.getElementById("chat-form");
+        const chatMessages = document.getElementById("chat-messages");
+        const emptyState = document.getElementById("chat-empty-state");
+        const sessionMenus = document.querySelectorAll(".session-menu");
+        const deleteSessionForms = document.querySelectorAll(".delete-session-form");
+        if (!promptField) {
+            return;
+        }
+
+        const resizePrompt = () => {
+            promptField.style.height = "auto";
+            promptField.style.height = `${Math.min(promptField.scrollHeight, 220)}px`;
+        };
+
+        const scrollToBottom = () => {
+            window.requestAnimationFrame(() => {
+                window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+            });
+        };
+
+        const createLoadingBubble = () => {
+            if (!chatMessages) {
+                return;
+            }
+            const wrapper = document.createElement("div");
+            wrapper.className = "flex justify-start";
+            wrapper.innerHTML = `
+                <div class="max-w-3xl rounded-[28px] border border-slate-200 bg-white px-5 py-4 text-slate-800 shadow-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="h-2.5 w-2.5 animate-pulse rounded-full bg-blue-500"></span>
+                        <span class="h-2.5 w-2.5 animate-pulse rounded-full bg-blue-400 [animation-delay:150ms]"></span>
+                        <span class="h-2.5 w-2.5 animate-pulse rounded-full bg-blue-300 [animation-delay:300ms]"></span>
+                    </div>
+                </div>
+            `;
+            chatMessages.appendChild(wrapper);
+            scrollToBottom();
+        };
+
+        const submitQuickPrompt = (value) => {
+            if (!value || !chatForm) {
+                return;
+            }
+            promptField.value = value;
+            resizePrompt();
+            chatForm.requestSubmit();
+        };
+
+        const enhanceSuggestionActions = () => {
+            document.querySelectorAll('[data-ai-message="true"]').forEach((messageCard) => {
+                const sourceSummary = messageCard.dataset.sourceSummary || "";
+                const messageContent = messageCard.dataset.messageContent || "";
+                if (!sourceSummary.startsWith("OPTIONS:")) {
+                    return;
+                }
+                const options = sourceSummary.replace("OPTIONS:", "").split("|").map((item) => item.trim()).filter(Boolean);
+                if (!options.length) {
+                    return;
+                }
+                const sourceLabel = messageCard.querySelector(".source-summary");
+                if (sourceLabel) {
+                    sourceLabel.classList.add("hidden");
+                }
+                const panel = messageCard.querySelector(".suggestion-panel");
+                const actionContainer = messageCard.querySelector(".suggestion-actions");
+                const title = messageCard.querySelector(".suggestion-title");
+                const subtitle = messageCard.querySelector(".suggestion-subtitle");
+                const badge = messageCard.querySelector(".suggestion-badge");
+                if (!panel || !actionContainer || actionContainer.childElementCount) {
+                    return;
+                }
+                const isVariantSelection = messageContent.includes("memiliki beberapa varian");
+                const isProductListing = messageContent.includes("yang tersedia saat ini ada");
+                panel.classList.remove("hidden");
+                actionContainer.classList.remove("hidden");
+                if (title) {
+                    title.textContent = isVariantSelection
+                        ? "Pilih Varian Produk"
+                        : isProductListing
+                            ? "Pilih Produk dari Daftar"
+                            : "Pilih Topik Produk";
+                }
+                if (subtitle) {
+                    subtitle.textContent = isVariantSelection
+                        ? "Klik varian yang paling sesuai agar jawaban berikutnya lebih spesifik."
+                        : isProductListing
+                            ? "Klik salah satu produk agar pertanyaan berikutnya langsung spesifik."
+                            : "Klik salah satu pilihan agar percakapan bisa langsung dilanjutkan.";
+                }
+                if (badge) {
+                    badge.textContent = isVariantSelection ? "Varian" : isProductListing ? "Daftar Produk" : "Saran Cepat";
+                    badge.className = isVariantSelection
+                        ? "suggestion-badge rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-medium text-emerald-700"
+                        : isProductListing
+                            ? "suggestion-badge rounded-full bg-amber-100 px-3 py-1 text-[11px] font-medium text-amber-700"
+                        : "suggestion-badge rounded-full bg-blue-100 px-3 py-1 text-[11px] font-medium text-blue-700";
+                }
+                options.forEach((option) => {
+                    const button = document.createElement("button");
+                    button.type = "button";
+                    button.className = isVariantSelection
+                        ? "rounded-full border border-emerald-200 bg-white px-3 py-2 text-xs font-medium text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-50"
+                        : isProductListing
+                            ? "rounded-full border border-amber-200 bg-white px-3 py-2 text-xs font-medium text-amber-700 transition hover:border-amber-300 hover:bg-amber-50"
+                        : "rounded-full border border-blue-200 bg-white px-3 py-2 text-xs font-medium text-blue-700 transition hover:border-blue-300 hover:bg-blue-50";
+                    button.textContent = option;
+                    button.addEventListener("click", () => {
+                        const promptValue = isVariantSelection || isProductListing
+                            ? `Apa manfaat ${option}?`
+                            : option;
+                        submitQuickPrompt(promptValue);
+                    });
+                    actionContainer.appendChild(button);
+                });
+            });
+        };
+
+        resizePrompt();
+        enhanceSuggestionActions();
+        promptField.addEventListener("input", resizePrompt);
+        scrollToBottom();
+
+        promptField.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                if (promptField.value.trim()) {
+                    chatForm.requestSubmit();
+                }
+            }
+        });
+
+        chatForm?.addEventListener("submit", () => {
+            if (!promptField.value.trim()) {
+                return;
+            }
+            submitButton.disabled = true;
+            if (emptyState) {
+                emptyState.closest(".flex")?.classList.add("hidden");
+            }
+            createLoadingBubble();
+        });
+
+        document.addEventListener("click", (event) => {
+            sessionMenus.forEach((menu) => {
+                if (!menu.contains(event.target)) {
+                    menu.removeAttribute("open");
+                }
+            });
+        });
+
+        deleteSessionForms.forEach((form) => {
+            form.addEventListener("submit", (event) => {
+                if (!window.confirm("Hapus sesi konsultasi ini?")) {
+                    event.preventDefault();
+                }
+            });
+        });
+    })();
+</script>
+{% endblock %}

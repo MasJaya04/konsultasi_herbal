@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+    <div class="space-y-6">
+        <div class="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h1 class="text-2xl font-semibold">Tinjau Pertanyaan Belum Terjawab</h1>
+                    <p class="mt-4 text-sm text-slate-500">{{ object.customer.username }} · {{ object.created_at }}</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    {% if object.product %}
+                        <span class="rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-700">{{ object.product.name }}</span>
+                    {% endif %}
+                    <span class="rounded-full px-3 py-1 text-xs {% if object.status == 'open' %}bg-amber-50 text-amber-700{% elif object.status == 'reviewed' %}bg-sky-50 text-sky-700{% else %}bg-emerald-50 text-emerald-700{% endif %}">
+                        {{ object.get_status_display }}
+                    </span>
+                </div>
+            </div>
+            <h2 class="mt-4 text-lg font-semibold text-slate-900">{{ object.question }}</h2>
+            <p class="mt-3 text-sm leading-7 text-slate-600">{{ object.reason }}</p>
+            <div class="mt-6 grid gap-4 sm:grid-cols-3">
+                <div class="rounded-2xl bg-slate-50 p-4">
+                    <p class="text-sm text-slate-500">Total pesan</p>
+                    <p class="mt-2 text-2xl font-semibold text-slate-900">{{ message_stats.total }}</p>
+                </div>
+                <div class="rounded-2xl bg-slate-50 p-4">
+                    <p class="text-sm text-slate-500">Pesan pengguna</p>
+                    <p class="mt-2 text-2xl font-semibold text-slate-900">{{ message_stats.user }}</p>
+                </div>
+                <div class="rounded-2xl bg-slate-50 p-4">
+                    <p class="text-sm text-slate-500">Pesan AI</p>
+                    <p class="mt-2 text-2xl font-semibold text-slate-900">{{ message_stats.ai }}</p>
+                </div>
+            </div>
+            <div class="mt-6 flex flex-wrap gap-3">
+                <a href="{{ knowledge_create_url }}" class="rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700">Buat entri pengetahuan</a>
+                <form action="{% url 'consultations:unanswered_retest' object.pk %}" method="post">
+                    {% csrf_token %}
+                    <button class="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">Uji ulang pertanyaan</button>
+                </form>
+            </div>
+            {% if retest_result %}
+                <div class="mt-6 rounded-2xl {% if retest_result.response_state == 'fallback' %}bg-amber-50 ring-1 ring-amber-100{% else %}bg-emerald-50 ring-1 ring-emerald-100{% endif %} p-5">
+                    <p class="text-xs font-medium uppercase tracking-wide {% if retest_result.response_state == 'fallback' %}text-amber-700{% else %}text-emerald-700{% endif %}">
+                        Hasil uji ulang
+                    </p>
+                    <p class="mt-3 text-sm font-medium text-slate-900">{{ retest_result.question }}</p>
+                    {% if retest_result.answer %}
+                        <p class="mt-3 text-sm leading-7 text-slate-700">{{ retest_result.answer }}</p>
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <span class="rounded-full bg-white px-3 py-1 text-xs text-slate-600">Keyakinan {{ retest_result.confidence }}</span>
+                            <span class="rounded-full bg-white px-3 py-1 text-xs {% if retest_result.response_state == 'fallback' %}text-amber-700{% else %}text-emerald-700{% endif %}">
+                                {{ retest_result.response_state }}
+                            </span>
+                        </div>
+                    {% else %}
+                        <p class="mt-3 text-sm leading-7 text-slate-700">{{ retest_result.reason }}</p>
+                    {% endif %}
+                    {% if retest_result.source_summary %}
+                        <p class="mt-3 text-xs text-slate-500">Sumber: {{ retest_result.source_summary }}</p>
+                    {% endif %}
+                </div>
+            {% endif %}
+            <form method="post" class="mt-6 space-y-5">
+                {% csrf_token %}
+                <div>
+                    <label for="{{ form.status.id_for_label }}" class="mb-2 block text-sm font-medium text-slate-700">Status</label>
+                    {{ form.status }}
+                </div>
+                <div>
+                    <label for="{{ form.resolved_entry.id_for_label }}" class="mb-2 block text-sm font-medium text-slate-700">Entri Penyelesaian</label>
+                    {{ form.resolved_entry }}
+                </div>
+                <button class="rounded-xl bg-slate-900 px-4 py-3 text-white">Simpan</button>
+            </form>
+        </div>
+    </div>
+    <div class="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+        <h2 class="text-xl font-semibold">Konteks Percakapan</h2>
+        <div class="mt-6 space-y-4">
+            {% for message in session_messages %}
+                <div class="rounded-2xl {% if message.sender == 'user' %}bg-slate-100{% else %}bg-emerald-50{% endif %} p-4">
+                    <div class="flex items-center justify-between gap-4">
+                        <p class="text-xs uppercase tracking-wide text-slate-500">{{ message.get_sender_display }}</p>
+                        {% if message.source_summary %}
+                            <span class="rounded-full bg-white px-3 py-1 text-[11px] text-slate-500">{{ message.source_summary }}</span>
+                        {% endif %}
+                    </div>
+                    {% if message.product %}
+                        <p class="mt-2 text-xs text-blue-600">{{ message.product.name }}</p>
+                    {% endif %}
+                    <p class="mt-2 text-sm leading-7 text-slate-700">{{ message.content }}</p>
+                </div>
+            {% empty %}
+                <p class="text-sm text-slate-500">Belum ada pesan pada sesi ini.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

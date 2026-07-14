@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+    <h1 class="text-2xl font-semibold">{{ session.title }}</h1>
+    {% if session.referenced_products %}
+        <div class="mt-3 flex flex-wrap gap-2">
+            {% for product in session.referenced_products %}
+                <span class="rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-700">{{ product.name }}</span>
+            {% endfor %}
+        </div>
+    {% endif %}
+    <p class="mt-2 text-sm text-slate-500">{{ session.user.username }} · {{ session.created_at }}</p>
+    <div class="mt-6 space-y-4">
+        {% for message in session.messages.all %}
+            <div class="rounded-2xl {% if message.sender == 'user' %}bg-slate-100{% else %}bg-emerald-50{% endif %} p-4">
+                <p class="text-xs uppercase tracking-wide text-slate-500">{{ message.get_sender_display }}</p>
+                {% if message.product %}
+                    <p class="mt-2 text-xs text-blue-600">{{ message.product.name }}</p>
+                {% endif %}
+                <p class="mt-2 text-sm text-slate-700">{{ message.content }}</p>
+                {% if message.knowledge_entries.all %}
+                    <div class="mt-3 flex flex-wrap gap-2">
+                        {% for entry in message.knowledge_entries.all %}
+                            <span class="rounded-full bg-white px-3 py-1 text-xs text-slate-700 ring-1 ring-slate-200">{{ entry.title }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

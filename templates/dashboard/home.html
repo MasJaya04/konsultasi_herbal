@@ -1,0 +1,506 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="overflow-hidden rounded-[2rem] bg-slate-950 text-white shadow-sm">
+    <div class="grid gap-8 px-6 py-8 lg:grid-cols-[1.2fr_0.8fr] lg:px-8">
+        <div>
+            <span class="inline-flex rounded-full border border-white/15 bg-white/10 px-4 py-1 text-xs font-medium uppercase tracking-[0.24em] text-sky-100">Pusat Kendali Admin</span>
+            <h1 class="mt-5 max-w-2xl text-3xl font-semibold leading-tight md:text-4xl">Pantau kualitas konsultasi herbal, basis pengetahuan, dan performa AI dalam satu layar.</h1>
+            <p class="mt-4 max-w-2xl text-sm leading-7 text-slate-300">Dasbor ini merangkum kondisi operasional sistem konsultasi PT Naturalva Herba Indonesia, mulai dari kualitas jawaban AI, antrean evaluasi, hingga kesiapan basis pengetahuan untuk mendukung RAG.</p>
+            <div class="mt-6 flex flex-wrap gap-3">
+                <a href="{% url 'consultations:unanswered_list' %}" class="rounded-full bg-white px-5 py-3 text-sm font-medium text-slate-950 transition hover:bg-slate-100">Tinjau pertanyaan</a>
+                <a href="{% url 'consultations:review_list' %}" class="rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm font-medium text-white transition hover:bg-white/15">Evaluasi jawaban AI</a>
+                <a href="{% url 'dashboard:export' %}?format=xlsx&start_date={{ dashboard_filters.start_date }}&end_date={{ dashboard_filters.end_date }}&report_role={{ dashboard_filters.report_role }}&report_category={{ dashboard_filters.report_category }}&report_product={{ dashboard_filters.report_product }}" class="rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm font-medium text-white transition hover:bg-white/15">Ekspor Excel</a>
+                <a href="{% url 'dashboard:export' %}?format=pdf&start_date={{ dashboard_filters.start_date }}&end_date={{ dashboard_filters.end_date }}&report_role={{ dashboard_filters.report_role }}&report_category={{ dashboard_filters.report_category }}&report_product={{ dashboard_filters.report_product }}" class="rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm font-medium text-white transition hover:bg-white/15">Ekspor PDF</a>
+            </div>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+            <form method="get" class="rounded-[1.75rem] border border-white/10 bg-white/10 p-5 backdrop-blur">
+                <p class="text-sm text-slate-300">Rentang Dasbor</p>
+                <div class="mt-4 grid gap-3">
+                    <input type="date" name="start_date" value="{{ dashboard_filters.start_date }}" class="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white">
+                    <input type="date" name="end_date" value="{{ dashboard_filters.end_date }}" class="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white">
+                    <select name="report_role" class="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white">
+                        <option value="">Semua peran</option>
+                        <option value="admin" {% if dashboard_filters.report_role == 'admin' %}selected{% endif %}>Admin</option>
+                        <option value="ai_trainer" {% if dashboard_filters.report_role == 'ai_trainer' %}selected{% endif %}>Pelatih AI</option>
+                        <option value="customer" {% if dashboard_filters.report_role == 'customer' %}selected{% endif %}>Pengguna</option>
+                    </select>
+                    <select name="report_category" class="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white">
+                        <option value="">Semua kategori produk</option>
+                        {% for category in report_categories %}
+                            <option value="{{ category.id }}" {% if dashboard_filters.report_category == category.id|stringformat:'s' %}selected{% endif %}>{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="report_product" class="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white">
+                        <option value="">Semua produk</option>
+                        {% for product in report_all_products %}
+                            <option value="{{ product.id }}" {% if dashboard_filters.report_product == product.id|stringformat:'s' %}selected{% endif %}>{{ product.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button class="rounded-xl bg-white px-4 py-3 text-sm font-medium text-slate-950">Terapkan Saringan</button>
+                </div>
+            </form>
+            <div class="rounded-[1.75rem] border border-white/10 bg-white/10 p-5 backdrop-blur">
+                <p class="text-sm text-slate-300">Skor Kualitas</p>
+                <div class="mt-3 flex items-end justify-between gap-4">
+                    <p class="text-5xl font-semibold">{{ operational_summary.quality_score }}</p>
+                    <span class="rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-medium text-emerald-200">Sinyal Operasional</span>
+                </div>
+                <div class="mt-5 h-2 overflow-hidden rounded-full bg-white/10">
+                    <div class="h-full rounded-full bg-gradient-to-r from-sky-400 via-emerald-400 to-lime-300" style="width: {{ operational_summary.quality_score }}%;"></div>
+                </div>
+            </div>
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
+                <div class="rounded-[1.75rem] border border-white/10 bg-white/10 p-5">
+                    <p class="text-sm text-slate-300">Jawaban Berhasil</p>
+                    <p class="mt-3 text-3xl font-semibold">{{ operational_summary.answer_success_rate }}%</p>
+                </div>
+                <div class="rounded-[1.75rem] border border-white/10 bg-white/10 p-5">
+                    <p class="text-sm text-slate-300">Evaluasi Selesai</p>
+                    <p class="mt-3 text-3xl font-semibold">{{ operational_summary.review_completion }}%</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+    <div class="rounded-3xl bg-slate-950 p-5 text-white shadow-sm">
+        <p class="text-sm text-slate-300">Total Pengguna</p>
+        <p class="mt-3 text-3xl font-semibold">{{ metrics.users }}</p>
+    </div>
+    <div class="rounded-3xl bg-emerald-600 p-5 text-white shadow-sm">
+        <p class="text-sm text-emerald-100">Produk Herbal</p>
+        <p class="mt-3 text-3xl font-semibold">{{ metrics.products }}</p>
+    </div>
+    <div class="rounded-3xl bg-amber-500 p-5 text-white shadow-sm">
+        <p class="text-sm text-amber-50">Basis Pengetahuan</p>
+        <p class="mt-3 text-3xl font-semibold">{{ metrics.knowledge_entries }}</p>
+    </div>
+    <div class="rounded-3xl bg-sky-600 p-5 text-white shadow-sm">
+        <p class="text-sm text-sky-100">Sesi Konsultasi</p>
+        <p class="mt-3 text-3xl font-semibold">{{ metrics.consultations }}</p>
+    </div>
+    <div class="rounded-3xl bg-rose-600 p-5 text-white shadow-sm">
+        <p class="text-sm text-rose-100">Belum Terjawab</p>
+        <p class="mt-3 text-3xl font-semibold">{{ metrics.unanswered_questions }}</p>
+    </div>
+</div>
+
+<section class="mt-8 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+    <div class="flex items-center justify-between">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900">Laporan Terfilter</h2>
+            <p class="mt-1 text-sm text-slate-500">Ringkasan cepat berdasarkan peran pengguna dan kategori produk yang dipilih.</p>
+        </div>
+        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">Tampilan Laporan</span>
+    </div>
+    <div class="mt-5 grid gap-4 md:grid-cols-4">
+        <div class="rounded-2xl bg-slate-50 p-4">
+            <p class="text-sm text-slate-500">Pengguna sesuai saringan</p>
+            <p class="mt-3 text-3xl font-semibold text-slate-900">{{ report_summary.users }}</p>
+        </div>
+        <div class="rounded-2xl bg-slate-50 p-4">
+            <p class="text-sm text-slate-500">Sesi sesuai filter</p>
+            <p class="mt-3 text-3xl font-semibold text-slate-900">{{ report_summary.sessions }}</p>
+        </div>
+        <div class="rounded-2xl bg-slate-50 p-4">
+            <p class="text-sm text-slate-500">Belum terjawab sesuai saringan</p>
+            <p class="mt-3 text-3xl font-semibold text-slate-900">{{ report_summary.unanswered }}</p>
+        </div>
+        <div class="rounded-2xl bg-slate-50 p-4">
+            <p class="text-sm text-slate-500">Produk sesuai saringan</p>
+            <p class="mt-3 text-3xl font-semibold text-slate-900">{{ report_summary.products }}</p>
+        </div>
+    </div>
+    <div class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        {% for product in report_products %}
+            <div class="rounded-2xl bg-slate-50 p-4">
+                <p class="text-xs uppercase tracking-wide text-slate-400">{{ product.category.name }}</p>
+                <p class="mt-2 text-sm font-medium text-slate-800">{{ product.name }}</p>
+            </div>
+        {% empty %}
+            <div class="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">Tidak ada produk sesuai filter saat ini.</div>
+        {% endfor %}
+    </div>
+</section>
+
+{% if selected_report_product and product_focus_metrics %}
+<section class="mt-8 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900">Fokus Produk: {{ selected_report_product.name }}</h2>
+            <p class="mt-1 text-sm text-slate-500">Ringkasan kualitas pengetahuan dan performa konsultasi khusus untuk produk yang dipilih.</p>
+        </div>
+        <span class="rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-700">{{ selected_report_product.category.name }}</span>
+    </div>
+    <div class="mt-5 grid gap-4 md:grid-cols-3 xl:grid-cols-6">
+        <div class="rounded-2xl bg-slate-50 p-4">
+            <p class="text-sm text-slate-500">Pengetahuan</p>
+            <p class="mt-3 text-3xl font-semibold text-slate-900">{{ product_focus_metrics.knowledge_entries }}</p>
+        </div>
+        <div class="rounded-2xl bg-slate-50 p-4">
+            <p class="text-sm text-slate-500">Sesi</p>
+            <p class="mt-3 text-3xl font-semibold text-slate-900">{{ product_focus_metrics.consultations }}</p>
+        </div>
+        <div class="rounded-2xl bg-slate-50 p-4">
+            <p class="text-sm text-slate-500">Pertanyaan Terbuka</p>
+            <p class="mt-3 text-3xl font-semibold text-slate-900">{{ product_focus_metrics.unanswered_open }}</p>
+        </div>
+        <div class="rounded-2xl bg-slate-50 p-4">
+            <p class="text-sm text-slate-500">Sudah Direview</p>
+            <p class="mt-3 text-3xl font-semibold text-slate-900">{{ product_focus_metrics.reviewed_messages }}</p>
+        </div>
+        <div class="rounded-2xl bg-slate-50 p-4">
+            <p class="text-sm text-slate-500">Akurasi Evaluasi</p>
+            <p class="mt-3 text-3xl font-semibold text-slate-900">{{ product_focus_metrics.accuracy_rate }}%</p>
+        </div>
+        <div class="rounded-2xl bg-slate-50 p-4">
+            <p class="text-sm text-slate-500">Jawaban Berhasil</p>
+            <p class="mt-3 text-3xl font-semibold text-slate-900">{{ product_focus_metrics.success_rate }}%</p>
+        </div>
+    </div>
+    <div class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {% for entry in product_focus_knowledge %}
+            <div class="rounded-2xl bg-slate-50 p-4">
+                <p class="text-xs uppercase tracking-wide text-slate-400">{{ entry.category.name }}</p>
+                <p class="mt-2 text-sm font-medium text-slate-800">{{ entry.title }}</p>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<div class="mt-8 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+    <section class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <div class="flex items-center justify-between gap-4">
+            <div>
+                <h2 class="text-lg font-semibold text-slate-900">Prioritas Hari Ini</h2>
+                <p class="mt-1 text-sm text-slate-500">Fokuskan tindak lanjut ke area yang paling berpengaruh ke kualitas jawaban AI.</p>
+            </div>
+            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">Antrean Aksi</span>
+        </div>
+        <div class="mt-5 grid gap-4 md:grid-cols-3">
+            {% for item in priority_actions %}
+                <a href="{{ item.url }}" class="rounded-[1.75rem] border p-5 transition hover:-translate-y-0.5 {% if item.tone == 'rose' %}border-rose-100 bg-rose-50{% elif item.tone == 'amber' %}border-amber-100 bg-amber-50{% else %}border-emerald-100 bg-emerald-50{% endif %}">
+                    <p class="text-sm {% if item.tone == 'rose' %}text-rose-700{% elif item.tone == 'amber' %}text-amber-700{% else %}text-emerald-700{% endif %}">{{ item.title }}</p>
+                    <p class="mt-3 text-3xl font-semibold text-slate-900">{{ item.value }}</p>
+                    <p class="mt-3 text-sm leading-6 text-slate-600">{{ item.description }}</p>
+                </a>
+            {% endfor %}
+        </div>
+    </section>
+    <section class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-slate-900">Snapshot Operasional</h2>
+            <span class="rounded-full bg-sky-50 px-3 py-1 text-xs text-sky-700">Pemeriksaan Sistem</span>
+        </div>
+        <div class="mt-5 space-y-4">
+            <div class="rounded-2xl bg-slate-50 p-4">
+                <div class="flex items-center justify-between gap-4">
+                    <p class="text-sm text-slate-500">Jawaban cadangan</p>
+                    <p class="text-lg font-semibold text-slate-900">{{ operational_summary.fallback_answers }}</p>
+                </div>
+            </div>
+            <div class="rounded-2xl bg-slate-50 p-4">
+                <div class="flex items-center justify-between gap-4">
+                    <p class="text-sm text-slate-500">Jawaban keyakinan rendah</p>
+                    <p class="text-lg font-semibold text-slate-900">{{ operational_summary.low_confidence_total }}</p>
+                </div>
+            </div>
+            <div class="rounded-2xl bg-slate-50 p-4">
+                <div class="flex items-center justify-between gap-4">
+                    <p class="text-sm text-slate-500">Menunggu evaluasi</p>
+                    <p class="text-lg font-semibold text-slate-900">{{ operational_summary.pending_reviews }}</p>
+                </div>
+            </div>
+            <div class="rounded-2xl bg-slate-50 p-4">
+                <div class="flex items-center justify-between gap-4">
+                    <p class="text-sm text-slate-500">Rasio unanswered vs knowledge</p>
+                    <p class="text-lg font-semibold text-slate-900">{{ operational_summary.unresolved_ratio }}%</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<div class="mt-8 grid gap-6 xl:grid-cols-2">
+    <section class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-slate-900">Grafik Evaluasi AI</h2>
+            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">Komposisi Keputusan</span>
+        </div>
+        <div class="mt-5 space-y-4">
+            {% for item in dashboard_charts.review_segments %}
+                <div>
+                    <div class="mb-2 flex items-center justify-between gap-4">
+                        <p class="text-sm font-medium text-slate-700">{{ item.label }}</p>
+                        <p class="text-sm {{ item.text_class }}">{{ item.value }} · {{ item.width }}%</p>
+                    </div>
+                    <div class="h-3 overflow-hidden rounded-full bg-slate-100">
+                        <div class="h-full rounded-full {{ item.bar_class }}" style="width: {{ item.width }}%;"></div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+    <section class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-slate-900">Grafik Alur AI</h2>
+            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">Alur Jawaban</span>
+        </div>
+        <div class="mt-5 grid gap-4 sm:grid-cols-3">
+            {% for item in dashboard_charts.pipeline_segments %}
+                <div class="rounded-2xl {{ item.bg_class }} p-4">
+                    <p class="text-sm {{ item.text_class }}">{{ item.label }}</p>
+                    <p class="mt-3 text-3xl font-semibold text-slate-900">{{ item.value }}</p>
+                    <div class="mt-4 h-2 overflow-hidden rounded-full bg-white">
+                        <div class="h-full rounded-full {{ item.bar_class }}" style="width: {{ item.width }}%;"></div>
+                    </div>
+                    <p class="mt-3 text-xs text-slate-500">{{ item.width }}% dari seluruh jawaban AI</p>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+
+<section class="mt-8 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+    <div class="flex items-center justify-between">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900">Trend Harian 7 Hari Terakhir</h2>
+            <p class="mt-1 text-sm text-slate-500">Pantau pertumbuhan sesi konsultasi dan pertanyaan belum terjawab secara harian.</p>
+        </div>
+        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">Tren Harian</span>
+    </div>
+    <div class="mt-6 grid gap-4 md:grid-cols-7">
+        {% for item in daily_trends %}
+            <div class="rounded-2xl bg-slate-50 p-4">
+                <div class="flex h-40 items-end justify-center gap-3">
+                    <div class="flex w-8 items-end justify-center rounded-t-xl bg-sky-500/15">
+                        <div class="w-8 rounded-t-xl bg-sky-500" style="height: {{ item.consultation_height }}%;"></div>
+                    </div>
+                    <div class="flex w-8 items-end justify-center rounded-t-xl bg-rose-500/15">
+                        <div class="w-8 rounded-t-xl bg-rose-500" style="height: {{ item.unanswered_height }}%;"></div>
+                    </div>
+                </div>
+                <p class="mt-4 text-center text-sm font-medium text-slate-700">{{ item.label }}</p>
+                <div class="mt-3 space-y-1 text-xs text-slate-500">
+                    <p>Konsultasi: {{ item.consultations }}</p>
+                    <p>Belum terjawab: {{ item.unanswered }}</p>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+
+<div class="mt-8 grid gap-4 lg:grid-cols-4">
+    <a href="{% url 'consultations:unanswered_list' %}" class="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5">
+        <p class="text-sm text-slate-500">Aksi Cepat</p>
+        <h2 class="mt-3 text-lg font-semibold text-slate-900">Tinjau Pertanyaan</h2>
+        <p class="mt-2 text-sm text-slate-500">Tinjau pertanyaan yang belum terjawab AI.</p>
+    </a>
+    <a href="{% url 'consultations:review_list' %}" class="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5">
+        <p class="text-sm text-slate-500">Aksi Cepat</p>
+        <h2 class="mt-3 text-lg font-semibold text-slate-900">Evaluasi Jawaban AI</h2>
+        <p class="mt-2 text-sm text-slate-500">Lihat dan validasi kualitas respons AI.</p>
+    </a>
+    <a href="{% url 'knowledge:entry_create' %}" class="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5">
+        <p class="text-sm text-slate-500">Aksi Cepat</p>
+        <h2 class="mt-3 text-lg font-semibold text-slate-900">Tambah Pengetahuan</h2>
+        <p class="mt-2 text-sm text-slate-500">Masukkan pengetahuan baru ke basis pengetahuan.</p>
+    </a>
+    <a href="{% url 'accounts:user_list' %}" class="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5">
+        <p class="text-sm text-slate-500">Aksi Cepat</p>
+        <h2 class="mt-3 text-lg font-semibold text-slate-900">Kelola Pengguna</h2>
+        <p class="mt-2 text-sm text-slate-500">Atur akun admin, pelatih, dan pengguna.</p>
+    </a>
+</div>
+
+<div class="mt-8 grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
+    <section class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold">Status Sistem</h2>
+            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">Lingkungan</span>
+        </div>
+        <div class="mt-4 space-y-4">
+            <div class="rounded-2xl bg-slate-50 p-4">
+                <p class="text-sm text-slate-500">Database</p>
+                <p class="mt-2 font-medium text-slate-900">{{ system_status.database }}</p>
+            </div>
+            <div class="rounded-2xl bg-slate-50 p-4">
+                <p class="text-sm text-slate-500">Model Ollama</p>
+                <p class="mt-2 font-medium text-slate-900">{{ system_status.ollama_model }}</p>
+            </div>
+            <div class="rounded-2xl bg-slate-50 p-4">
+                <p class="text-sm text-slate-500">Ollama URL</p>
+                <p class="mt-2 break-all font-medium text-slate-900">{{ system_status.ollama_url }}</p>
+            </div>
+            <div class="rounded-2xl bg-slate-50 p-4">
+                <p class="text-sm text-slate-500">Batas Permintaan</p>
+                <p class="mt-2 font-medium text-slate-900">{{ system_status.rate_limit }} permintaan / menit</p>
+            </div>
+        </div>
+    </section>
+    <section class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold">Distribusi Peran</h2>
+            <span class="rounded-full bg-sky-50 px-3 py-1 text-xs text-sky-700">Kontrol Akses</span>
+        </div>
+        <div class="mt-4 grid gap-4 md:grid-cols-3">
+            <div class="rounded-2xl bg-slate-950 p-4 text-white">
+                <p class="text-sm text-slate-300">Admin</p>
+                <p class="mt-3 text-3xl font-semibold">{{ role_metrics.admin }}</p>
+            </div>
+            <div class="rounded-2xl bg-sky-600 p-4 text-white">
+                <p class="text-sm text-sky-100">Pelatih AI</p>
+                <p class="mt-3 text-3xl font-semibold">{{ role_metrics.ai_trainer }}</p>
+            </div>
+            <div class="rounded-2xl bg-emerald-600 p-4 text-white">
+                <p class="text-sm text-emerald-100">Pengguna</p>
+                <p class="mt-3 text-3xl font-semibold">{{ role_metrics.customer }}</p>
+            </div>
+        </div>
+    </section>
+</div>
+
+<div class="mt-8 grid gap-6 lg:grid-cols-2">
+    <section class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold">Pertanyaan Belum Terjawab</h2>
+            <span class="rounded-full bg-rose-50 px-3 py-1 text-xs text-rose-700">Perlu Perhatian</span>
+        </div>
+        <div class="mt-4 space-y-4">
+            {% for item in latest_unanswered %}
+                <div class="rounded-2xl bg-slate-50 p-4">
+                    <p class="text-sm text-slate-500">{{ item.customer.username }}</p>
+                    <p class="mt-2 text-sm text-slate-700">{{ item.question }}</p>
+                </div>
+            {% empty %}
+                <p class="text-sm text-slate-500">Belum ada pertanyaan belum terjawab.</p>
+            {% endfor %}
+        </div>
+    </section>
+    <section class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold">Sesi Terbaru</h2>
+            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">Aktivitas Terbaru</span>
+        </div>
+        <div class="mt-4 space-y-4">
+            {% for session in top_sessions %}
+                <div class="rounded-2xl bg-slate-50 p-4">
+                    <p class="font-medium">{{ session.title }}</p>
+                    <p class="mt-2 text-sm text-slate-500">{{ session.user.username }} · {{ session.message_count }} pesan</p>
+                </div>
+            {% empty %}
+                <p class="text-sm text-slate-500">Belum ada sesi konsultasi.</p>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+
+<section class="mt-8 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+    <div class="flex items-center justify-between">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900">Log Aktivitas Terbaru</h2>
+            <p class="mt-1 text-sm text-slate-500">Jejak singkat aksi penting yang dilakukan di panel admin dan pelatih.</p>
+        </div>
+        <a href="{% url 'consultations:activity_log_list' %}" class="rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700">Lihat Semua</a>
+    </div>
+    <div class="mt-5 grid gap-4">
+        {% for item in latest_activity_logs %}
+            <div class="rounded-2xl bg-slate-50 p-4">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">{{ item.actor.username|default:"Sistem" }}</span>
+                    <span class="rounded-full bg-sky-50 px-3 py-1 text-xs text-sky-700">{{ item.action }}</span>
+                    <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs text-emerald-700">{{ item.target_type }}</span>
+                </div>
+                <p class="mt-3 text-sm text-slate-700">{{ item.description }}</p>
+                <p class="mt-2 text-xs text-slate-400">{{ item.created_at }}</p>
+            </div>
+        {% empty %}
+            <p class="text-sm text-slate-500">Belum ada log aktivitas.</p>
+        {% endfor %}
+    </div>
+</section>
+
+<div class="mt-8 grid gap-6 xl:grid-cols-2">
+    <section class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold">Pertanyaan Cadangan Terbanyak</h2>
+            <span class="rounded-full bg-amber-50 px-3 py-1 text-xs text-amber-700">Pelatih AI</span>
+        </div>
+        <div class="mt-4 space-y-4">
+            {% for item in top_fallback_questions %}
+                <div class="rounded-2xl bg-slate-50 p-4">
+                    <p class="text-sm font-medium text-slate-800">{{ item.question }}</p>
+                    <p class="mt-2 text-xs text-slate-500">{{ item.total }} kali masuk pertanyaan belum terjawab</p>
+                </div>
+            {% empty %}
+                <p class="text-sm text-slate-500">Belum ada data cadangan.</p>
+            {% endfor %}
+        </div>
+    </section>
+    <section class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold">Basis Pengetahuan Paling Dipakai</h2>
+            <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs text-emerald-700">Penggunaan RAG</span>
+        </div>
+        <div class="mt-4 space-y-4">
+            {% for entry in top_knowledge_usage %}
+                <div class="rounded-2xl bg-slate-50 p-4">
+                    <p class="text-sm font-medium text-slate-800">{{ entry.title }}</p>
+                    <p class="mt-2 text-xs text-slate-500">Digunakan {{ entry.usage_count }} kali pada jawaban AI</p>
+                </div>
+            {% empty %}
+                <p class="text-sm text-slate-500">Belum ada basis pengetahuan yang terpakai.</p>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+
+<div class="mt-8 grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+    <section class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold">Ringkasan Evaluasi AI</h2>
+            <span class="rounded-full bg-sky-50 px-3 py-1 text-xs text-sky-700">Kontrol Kualitas</span>
+        </div>
+        <div class="mt-4 grid gap-4 md:grid-cols-3 xl:grid-cols-1">
+            <div class="rounded-2xl bg-emerald-50 p-4 ring-1 ring-emerald-100">
+                <p class="text-sm text-emerald-700">Akurat</p>
+                <p class="mt-3 text-3xl font-semibold text-emerald-900">{{ review_summary.accurate }}</p>
+            </div>
+            <div class="rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-100">
+                <p class="text-sm text-amber-700">Perlu Revisi</p>
+                <p class="mt-3 text-3xl font-semibold text-amber-900">{{ review_summary.needs_revision }}</p>
+            </div>
+            <div class="rounded-2xl bg-rose-50 p-4 ring-1 ring-rose-100">
+                <p class="text-sm text-rose-700">Tidak Tepat</p>
+                <p class="mt-3 text-3xl font-semibold text-rose-900">{{ review_summary.incorrect }}</p>
+            </div>
+        </div>
+    </section>
+    <section class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold">Jawaban Keyakinan Rendah</h2>
+            <span class="rounded-full bg-rose-50 px-3 py-1 text-xs text-rose-700">&lt; 0.70</span>
+        </div>
+        <div class="mt-4 space-y-4">
+            {% for message in low_confidence_messages %}
+                <div class="rounded-2xl bg-slate-50 p-4">
+                    <p class="text-sm text-slate-500">{{ message.session.user.username }} · {{ message.created_at }}</p>
+                    <p class="mt-2 line-clamp-3 text-sm leading-6 text-slate-700">{{ message.content }}</p>
+                    <div class="mt-3 flex flex-wrap gap-2">
+                        <span class="rounded-full bg-white px-3 py-1 text-xs text-slate-600">Keyakinan {{ message.confidence_score }}</span>
+                        <span class="rounded-full px-3 py-1 text-xs {% if message.response_state == 'fallback' %}bg-amber-50 text-amber-700{% else %}bg-slate-100 text-slate-600{% endif %}">
+                            {{ message.get_response_state_display }}
+                        </span>
+                    </div>
+                </div>
+            {% empty %}
+                <p class="text-sm text-slate-500">Belum ada jawaban dengan keyakinan rendah.</p>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

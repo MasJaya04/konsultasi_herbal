@@ -1,0 +1,5 @@
+product,category,title,question,answer,source_type,keywords,status
+,FAQ,Apakah produk herbal dapat menggantikan pengobatan medis?,Apakah produk herbal dapat menggantikan pengobatan medis?,Tidak. Produk herbal merupakan pelengkap dan bukan pengganti diagnosis maupun terapi dari dokter.,faq,"herbal,dokter",published
+,FAQ,Apakah semua produk cocok untuk semua orang?,Apakah semua produk cocok untuk semua orang?,Tidak. Penggunaan perlu disesuaikan dengan kondisi masing-masing individu.,faq,umum,published
+,Penyimpanan,Bagaimana cara menyimpan produk herbal?,Bagaimana cara menyimpan produk herbal?,"Simpan di tempat yang sejuk, kering, dan jauh dari jangkauan anak-anak.",product,penyimpanan,published
+,Konsultasi,Kapan harus berkonsultasi ke dokter?,Kapan harus berkonsultasi ke dokter?,"Segera konsultasikan apabila gejala tidak membaik, memburuk, atau disertai kondisi yang mengkhawatirkan.",article,dokter,published
