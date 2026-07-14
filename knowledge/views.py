@@ -10,6 +10,7 @@ from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
+from django.utils.text import slugify
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 from openpyxl import Workbook, load_workbook
 
@@ -203,6 +204,16 @@ class KnowledgeEntryListView(StaffRequiredMixin, ListView):
             raise ValidationError(f"Header CSV basis pengetahuan kurang: {', '.join(sorted(missing_columns))}.")
         valid_source_types = {choice[0] for choice in KnowledgeEntry.SourceType.choices}
         valid_statuses = {choice[0] for choice in KnowledgeEntry.Status.choices}
+        source_type_aliases = {
+            "official": KnowledgeEntry.SourceType.FAQ,
+            "knowledge": KnowledgeEntry.SourceType.ARTICLE,
+            "medical_policy": KnowledgeEntry.SourceType.ARTICLE,
+            "medical": KnowledgeEntry.SourceType.ARTICLE,
+        }
+        status_aliases = {
+            "active": KnowledgeEntry.Status.PUBLISHED,
+            "inactive": KnowledgeEntry.Status.DRAFT,
+        }
         created_count = 0
         updated_count = 0
         for index, row in enumerate(rows["items"], start=2):
@@ -210,18 +221,26 @@ class KnowledgeEntryListView(StaffRequiredMixin, ListView):
             product_name = (row.get("product") or "").strip()
             title = (row.get("title") or "").strip()
             answer = (row.get("answer") or "").strip()
-            source_type = (row.get("source_type") or "").strip().lower()
-            status = (row.get("status") or "").strip().lower()
+            source_type_raw = (row.get("source_type") or "").strip().lower()
+            status_raw = (row.get("status") or "").strip().lower()
+            source_type = source_type_aliases.get(source_type_raw, source_type_raw)
+            status = status_aliases.get(status_raw, status_raw)
             if not category_name or not title or not answer:
                 raise ValidationError(f"Baris {index} wajib memiliki kategori, judul, dan jawaban.")
             if source_type not in valid_source_types:
-                raise ValidationError(f"Baris {index} memiliki tipe sumber tidak valid: {source_type}.")
+                raise ValidationError(f"Baris {index} memiliki tipe sumber tidak valid: {source_type_raw}.")
             if status not in valid_statuses:
-                raise ValidationError(f"Baris {index} memiliki status tidak valid: {status}.")
+                raise ValidationError(f"Baris {index} memiliki status tidak valid: {status_raw}.")
             product = None
             if product_name:
-                product = Product.objects.filter(name=product_name, is_active=True).first()
-            if product_name and not product:
+                normalized_name = product_name.strip()
+                if normalized_name.lower() not in {"semua produk", "all products", "all product"}:
+                    product = Product.objects.filter(name__iexact=normalized_name, is_active=True).first()
+                    if not product:
+                        product = Product.objects.filter(slug=slugify(normalized_name), is_active=True).first()
+                    if not product:
+                        product = Product.objects.filter(name__icontains=normalized_name, is_active=True).first()
+            if product_name and not product and product_name.strip().lower() not in {"semua produk", "all products", "all product"}:
                 raise ValidationError(f"Baris {index} memiliki produk yang tidak ditemukan: {product_name}.")
             category, _ = KnowledgeCategory.objects.get_or_create(name=category_name)
             _, created = KnowledgeEntry.objects.update_or_create(
